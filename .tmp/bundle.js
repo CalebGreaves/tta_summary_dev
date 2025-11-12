@@ -1179,11 +1179,11 @@
             var dispatcher = resolveDispatcher();
             return dispatcher.useReducer(reducer, initialArg, init);
           }
-          function useRef(initialValue) {
+          function useRef2(initialValue) {
             var dispatcher = resolveDispatcher();
             return dispatcher.useRef(initialValue);
           }
-          function useEffect(create, deps) {
+          function useEffect2(create, deps) {
             var dispatcher = resolveDispatcher();
             return dispatcher.useEffect(create, deps);
           }
@@ -1458,12 +1458,12 @@
           exports.useCallback = useCallback;
           exports.useContext = useContext;
           exports.useDebugValue = useDebugValue;
-          exports.useEffect = useEffect;
+          exports.useEffect = useEffect2;
           exports.useImperativeHandle = useImperativeHandle;
           exports.useLayoutEffect = useLayoutEffect;
           exports.useMemo = useMemo2;
           exports.useReducer = useReducer;
-          exports.useRef = useRef;
+          exports.useRef = useRef2;
           exports.useState = useState2;
           exports.version = ReactVersion;
         })();
@@ -21094,7 +21094,7 @@ For more info, visit https://fb.me/react-mock-scheduler`);
             workInProgressHook.memoizedState = [nextValue, nextDeps];
             return nextValue;
           }
-          function useRef(initialValue) {
+          function useRef2(initialValue) {
             currentlyRenderingComponent = resolveCurrentlyRenderingComponent();
             workInProgressHook = createWorkInProgressHook();
             var previousRef = workInProgressHook.memoizedState;
@@ -21175,7 +21175,7 @@ For more info, visit https://fb.me/react-mock-scheduler`);
             useContext,
             useMemo: useMemo2,
             useReducer,
-            useRef,
+            useRef: useRef2,
             useState: useState2,
             useLayoutEffect,
             useCallback,
@@ -49875,7 +49875,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
             },
             [subscribe, value, getSnapshot]
           );
-          useEffect(
+          useEffect2(
             function() {
               checkIfSnapshotChanged(inst) && forceUpdate({ inst });
               return subscribe(function() {
@@ -49901,7 +49901,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           return getSnapshot();
         }
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStart(Error());
-        var React3 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState2 = React3.useState, useEffect = React3.useEffect, useLayoutEffect = React3.useLayoutEffect, useDebugValue = React3.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+        var React3 = require_react(), objectIs = "function" === typeof Object.is ? Object.is : is, useState2 = React3.useState, useEffect2 = React3.useEffect, useLayoutEffect = React3.useLayoutEffect, useDebugValue = React3.useDebugValue, didWarnOld18Alpha = false, didWarnUncachedGetSnapshot = false, shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
         exports.useSyncExternalStore = void 0 !== React3.useSyncExternalStore ? React3.useSyncExternalStore : shim;
         "undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ && "function" === typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop && __REACT_DEVTOOLS_GLOBAL_HOOK__.registerInternalModuleStop(Error());
       })();
@@ -51143,7 +51143,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         onChange: _propTypes.default.func
       }, sharedSelectBasePropTypes);
       var styleParser = (0, _core.compose)(_system.maxWidth, _system.minWidth, _system.width, _system.flexItemSet, _system.positionSet, _system.margin);
-      var Select2 = (props, ref) => {
+      var Select = (props, ref) => {
         var _props$size = props.size, size = _props$size === void 0 ? _control_sizes.ControlSize.default : _props$size, value = props.value, _props$options = props.options, originalOptions = _props$options === void 0 ? [] : _props$options, autoFocus = props.autoFocus, disabled = props.disabled, id = props.id, name = props.name, tabIndex = props.tabIndex, onChange = props.onChange, onMouseEnter = props.onMouseEnter, onMouseLeave = props.onMouseLeave, onClick = props.onClick, hasOnClick = props.hasOnClick, className = props.className, style = props.style, ariaLabel = props["aria-label"], ariaDescribedByProp = props["aria-describedby"], ariaLabelledBy = props["aria-labelledby"], styleProps = (0, _objectWithoutProperties2.default)(props, _excluded);
         var formFieldContextValue = (0, _use_form_field.default)();
         var controlId = formFieldContextValue ? formFieldContextValue.controlId : void 0;
@@ -51215,7 +51215,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           }, option2.label);
         }));
       };
-      var ForwardedRefSelect = /* @__PURE__ */ React3.forwardRef(Select2);
+      var ForwardedRefSelect = /* @__PURE__ */ React3.forwardRef(Select);
       ForwardedRefSelect.displayName = "Select";
       ForwardedRefSelect.propTypes = _objectSpread({
         value: _select_and_select_buttons_helpers.selectOptionValuePropType
@@ -53436,7 +53436,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         pathClassName: _propTypes.default.string,
         pathStyle: _propTypes.default.object
       }, _tooltip_anchor_props.tooltipAnchorPropTypes), iconStylePropTypes);
-      var Icon = (props, ref) => {
+      var Icon2 = (props, ref) => {
         var name = props.name, _props$size = props.size, size = _props$size === void 0 ? 16 : _props$size, _props$fillColor = props.fillColor, fillColor = _props$fillColor === void 0 ? "currentColor" : _props$fillColor, onMouseEnter = props.onMouseEnter, onMouseLeave = props.onMouseLeave, onClick = props.onClick, hasOnClick = props.hasOnClick, className = props.className, style = props.style, pathClassName = props.pathClassName, pathStyle = props.pathStyle, _props$suppressWarnin = props.suppressWarning, suppressWarning = _props$suppressWarnin === void 0 ? false : _props$suppressWarnin, styleProps = (0, _objectWithoutProperties2.default)(props, _excluded);
         var classNameForStyleProps = (0, _use_styled_system.default)(_objectSpread(_objectSpread({}, styleProps), {}, {
           width: size,
@@ -53473,7 +53473,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           d: pathData
         }));
       };
-      var ForwardedRefIcon = /* @__PURE__ */ _react.default.forwardRef(Icon);
+      var ForwardedRefIcon = /* @__PURE__ */ _react.default.forwardRef(Icon2);
       ForwardedRefIcon.propTypes = _objectSpread({
         name: _icon_config.iconNamePropType.isRequired,
         suppressWarning: _propTypes.default.bool
@@ -61983,10 +61983,23 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     const base = (0, import_ui.useBase)();
     const [startDate, setStartDate] = (0, import_react.useState)("");
     const [endDate, setEndDate] = (0, import_react.useState)("");
-    const [selectedWorkplanSourceId, setSelectedWorkplanSourceId] = (0, import_react.useState)("");
-    const [selectedGoalIds, setSelectedGoalIds] = (0, import_react.useState)([]);
-    const [selectedObjectiveIds, setSelectedObjectiveIds] = (0, import_react.useState)([]);
-    const [selectedActivityIds, setSelectedActivityIds] = (0, import_react.useState)([]);
+    const [topLevel, setTopLevel] = (0, import_react.useState)("");
+    const [topLevelId, setTopLevelId] = (0, import_react.useState)("");
+    const [topLevelSearchTerm, setTopLevelSearchTerm] = (0, import_react.useState)("");
+    const [topLevelDropdownOpen, setTopLevelDropdownOpen] = (0, import_react.useState)(false);
+    const [bottomLevel, setBottomLevel] = (0, import_react.useState)("");
+    const dropdownRef = (0, import_react.useRef)(null);
+    (0, import_react.useEffect)(() => {
+      const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          setTopLevelDropdownOpen(false);
+        }
+      };
+      if (topLevelDropdownOpen) {
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+      }
+    }, [topLevelDropdownOpen]);
     const workplanSourcesTable = base.getTableById("tbl72KzV8O1LBmUXj");
     const goalsTable = base.getTableById("tbllMymEmuGkCucVM");
     const objectivesTable = base.getTableById("tbl9wK640Z5ZY7e7U");
@@ -61997,43 +62010,107 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     const objectives = (0, import_ui.useRecords)(objectivesTable);
     const activities = (0, import_ui.useRecords)(activitiesTable);
     const ttaSessions = (0, import_ui.useRecords)(ttaSessionsTable);
-    const goalsLinkField = goalsTable?.getFieldByNameIfExists("Workplan Source") || goalsTable?.fields.find((f) => f.type === "multipleRecordLinks");
-    const objectivesLinkField = objectivesTable?.getFieldByNameIfExists("Goal") || objectivesTable?.fields.find((f) => f.type === "multipleRecordLinks");
-    const activitiesLinkField = activitiesTable?.getFieldByNameIfExists("Objective") || activitiesTable?.fields.find((f) => f.type === "multipleRecordLinks");
-    const ttaSessionsLinkField = ttaSessionsTable?.getFieldByNameIfExists("Activities") || ttaSessionsTable?.fields.find((f) => f.type === "multipleRecordLinks");
-    const ttaSessionsDateField = ttaSessionsTable?.fields.find((f) => f.type === "date" || f.type === "dateTime");
-    const filteredGoals = (0, import_react.useMemo)(() => {
-      if (!selectedWorkplanSourceId || !goals || !goalsLinkField) return [];
-      return goals.filter((goal) => {
-        const linkedRecords = goal.getCellValue(goalsLinkField.id);
-        if (!linkedRecords) return false;
-        return linkedRecords.some((link) => link.id === selectedWorkplanSourceId);
-      });
-    }, [goals, selectedWorkplanSourceId, goalsLinkField]);
-    const filteredObjectives = (0, import_react.useMemo)(() => {
-      if (selectedGoalIds.length === 0 || !objectives || !objectivesLinkField) return [];
-      return objectives.filter((objective) => {
-        const linkedRecords = objective.getCellValue(objectivesLinkField.id);
-        if (!linkedRecords) return false;
-        return linkedRecords.some((link) => selectedGoalIds.includes(link.id));
-      });
-    }, [objectives, selectedGoalIds, objectivesLinkField]);
-    const filteredActivities = (0, import_react.useMemo)(() => {
-      if (selectedObjectiveIds.length === 0 || !activities || !activitiesLinkField) return [];
-      return activities.filter((activity) => {
-        const linkedRecords = activity.getCellValue(activitiesLinkField.id);
-        if (!linkedRecords) return false;
-        return linkedRecords.some((link) => selectedObjectiveIds.includes(link.id));
-      });
-    }, [activities, selectedObjectiveIds, activitiesLinkField]);
+    const goalsLinkField = goalsTable.getFieldById("fldIdc8oiivatAf3v");
+    const objectivesLinkField = objectivesTable.getFieldById("fldSS5U6Ou0OZjjCJ");
+    const objectivesToSourcesLinkField = objectivesTable.getFieldById("fldkQACpESCkddXpS");
+    const activitiesLinkField = activitiesTable.getFieldById("fldOg2Op1nWUYUgaW");
+    const activitiesStartDateField = activitiesTable.getFieldById("fldKQTLdFNry5aZjw");
+    const activitiesEndDateField = activitiesTable.getFieldById("fld4OE8aBXIPHWIdK");
+    const ttaSessionsLinkField = ttaSessionsTable.getFieldById("fldmE4r4v1OwA1xSY");
+    const ttaSessionsDateField = ttaSessionsTable.getFieldById("fldXcKUaiiJTmCXRa");
+    const relevantActivityIds = (0, import_react.useMemo)(() => {
+      if (!topLevel || !topLevelId) return [];
+      switch (topLevel) {
+        case "workplanSource": {
+          if (bottomLevel === "goal") {
+            const goalIds = goals.filter((goal) => {
+              const linked = goal.getCellValue(goalsLinkField?.id);
+              return linked && linked.some((l) => l.id === topLevelId);
+            }).map((g) => g.id);
+            return activities.filter((activity) => {
+              const linked = activity.getCellValue(activitiesLinkField?.id);
+              return linked && linked.some((l) => {
+                const objLinkedToGoal = objectives.find((obj) => obj.id === l.id);
+                if (!objLinkedToGoal) return false;
+                const objLinked = objLinkedToGoal.getCellValue(objectivesLinkField?.id);
+                return objLinked && objLinked.some((ol) => goalIds.includes(ol.id));
+              });
+            }).map((a) => a.id);
+          } else if (bottomLevel === "objective") {
+            const objIds = objectives.filter((obj) => {
+              const linked = obj.getCellValue(objectivesToSourcesLinkField?.id);
+              return linked && linked.some((l) => l.id === topLevelId);
+            }).map((o) => o.id);
+            return activities.filter((activity) => {
+              const linked = activity.getCellValue(activitiesLinkField?.id);
+              return linked && linked.some((l) => objIds.includes(l.id));
+            }).map((a) => a.id);
+          } else if (bottomLevel === "activity") {
+            return activities.filter((activity) => {
+              const linkedObjs = activity.getCellValue(activitiesLinkField?.id);
+              if (!linkedObjs) return false;
+              return linkedObjs.some((lo) => {
+                const obj = objectives.find((o) => o.id === lo.id);
+                if (!obj) return false;
+                const linked = obj.getCellValue(objectivesToSourcesLinkField?.id);
+                return linked && linked.some((l) => l.id === topLevelId);
+              });
+            }).map((a) => a.id);
+          }
+          return [];
+        }
+        case "goal": {
+          if (bottomLevel === "goal") {
+            return [];
+          } else if (bottomLevel === "objective") {
+            const objIds = objectives.filter((obj) => {
+              const linked = obj.getCellValue(objectivesLinkField?.id);
+              return linked && linked.some((l) => l.id === topLevelId);
+            }).map((o) => o.id);
+            return activities.filter((activity) => {
+              const linked = activity.getCellValue(activitiesLinkField?.id);
+              return linked && linked.some((l) => objIds.includes(l.id));
+            }).map((a) => a.id);
+          } else if (bottomLevel === "activity") {
+            return activities.filter((activity) => {
+              const linkedObjs = activity.getCellValue(activitiesLinkField?.id);
+              if (!linkedObjs) return false;
+              return linkedObjs.some((lo) => {
+                const obj = objectives.find((o) => o.id === lo.id);
+                if (!obj) return false;
+                const linked = obj.getCellValue(objectivesLinkField?.id);
+                return linked && linked.some((l) => l.id === topLevelId);
+              });
+            }).map((a) => a.id);
+          }
+          return [];
+        }
+        case "objective": {
+          if (bottomLevel === "objective") {
+            return [];
+          } else if (bottomLevel === "activity") {
+            return activities.filter((activity) => {
+              const linked = activity.getCellValue(activitiesLinkField?.id);
+              return linked && linked.some((l) => l.id === topLevelId);
+            }).map((a) => a.id);
+          }
+          return [];
+        }
+        case "activity": {
+          return [topLevelId];
+        }
+        default:
+          return [];
+      }
+    }, [topLevel, topLevelId, bottomLevel, goals, objectives, activities, goalsLinkField, objectivesLinkField, objectivesToSourcesLinkField, activitiesLinkField]);
     const filteredSessions = (0, import_react.useMemo)(() => {
       if (!ttaSessions) return [];
       return ttaSessions.filter((session) => {
-        if (selectedActivityIds.length > 0 && ttaSessionsLinkField) {
+        if (relevantActivityIds.length > 0 && ttaSessionsLinkField) {
           const linkedActivities = session.getCellValue(ttaSessionsLinkField.id);
           if (!linkedActivities) return false;
           const hasSelectedActivity = linkedActivities.some(
-            (link) => selectedActivityIds.includes(link.id)
+            (link) => relevantActivityIds.includes(link.id)
           );
           if (!hasSelectedActivity) return false;
         }
@@ -62046,105 +62123,138 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         }
         return true;
       });
-    }, [ttaSessions, selectedActivityIds, startDate, endDate, ttaSessionsLinkField, ttaSessionsDateField]);
-    const handleWorkplanSourceChange = (value) => {
-      setSelectedWorkplanSourceId(value);
-      setSelectedGoalIds([]);
-      setSelectedObjectiveIds([]);
-      setSelectedActivityIds([]);
+    }, [ttaSessions, relevantActivityIds, startDate, endDate, ttaSessionsLinkField, ttaSessionsDateField]);
+    const handleTopLevelChange = (value) => {
+      setTopLevel(value);
+      setTopLevelId("");
+      setBottomLevel("");
     };
-    const handleGoalToggle = (goalId) => {
-      setSelectedGoalIds((prev) => {
-        const isSelected = prev.includes(goalId);
-        if (isSelected) {
-          return prev.filter((id) => id !== goalId);
-        } else {
-          return [...prev, goalId];
-        }
+    const handleBottomLevelChange = (value) => {
+      setBottomLevel(value);
+    };
+    const selectedWorkplanSourceHasGoals = (0, import_react.useMemo)(() => {
+      if (topLevel !== "workplanSource" || !topLevelId) return true;
+      return goals.some((goal) => {
+        const linked = goal.getCellValue(goalsLinkField?.id);
+        return linked && linked.some((l) => l.id === topLevelId);
       });
-      setSelectedObjectiveIds([]);
-      setSelectedActivityIds([]);
+    }, [topLevel, topLevelId, goals, goalsLinkField]);
+    const getBottomLevelOptions = () => {
+      switch (topLevel) {
+        case "workplanSource":
+          if (selectedWorkplanSourceHasGoals) {
+            return [
+              { value: "goal", label: "Goal" },
+              { value: "objective", label: "Objective" },
+              { value: "activity", label: "Activity" }
+            ];
+          } else {
+            return [
+              { value: "objective", label: "Objective" },
+              { value: "activity", label: "Activity" }
+            ];
+          }
+        case "goal":
+          return [
+            { value: "goal", label: "Goal only" },
+            { value: "objective", label: "Objective" },
+            { value: "activity", label: "Activity" }
+          ];
+        case "objective":
+          return [
+            { value: "objective", label: "Objective only" },
+            { value: "activity", label: "Activity" }
+          ];
+        case "activity":
+          return [
+            { value: "activity", label: "Activity only" }
+          ];
+        default:
+          return [];
+      }
     };
-    const handleObjectiveToggle = (objectiveId) => {
-      setSelectedObjectiveIds((prev) => {
-        const isSelected = prev.includes(objectiveId);
-        if (isSelected) {
-          return prev.filter((id) => id !== objectiveId);
-        } else {
-          return [...prev, objectiveId];
-        }
-      });
-      setSelectedActivityIds([]);
-    };
-    const handleActivityToggle = (activityId) => {
-      setSelectedActivityIds((prev) => {
-        const isSelected = prev.includes(activityId);
-        if (isSelected) {
-          return prev.filter((id) => id !== activityId);
-        } else {
-          return [...prev, activityId];
-        }
-      });
-    };
+    (0, import_react.useMemo)(() => {
+      const validOptions = getBottomLevelOptions().map((opt) => opt.value);
+      if (bottomLevel && !validOptions.includes(bottomLevel)) {
+        setBottomLevel("");
+      }
+    }, [bottomLevel, topLevel, selectedWorkplanSourceHasGoals]);
+    const filteredTopLevelOptions = (0, import_react.useMemo)(() => {
+      if (!topLevel) return [];
+      const records = topLevel === "workplanSource" ? workplanSources : topLevel === "goal" ? goals : topLevel === "objective" ? objectives : activities;
+      const primaryFieldId = topLevel === "workplanSource" ? workplanSourcesTable.primaryField.id : topLevel === "goal" ? goalsTable.primaryField.id : topLevel === "objective" ? objectivesTable.primaryField.id : activitiesTable.primaryField.id;
+      if (!topLevelSearchTerm) {
+        return records.map((record) => ({
+          value: record.id,
+          label: record.name || record.getCellValueAsString(primaryFieldId),
+          score: 0
+        }));
+      }
+      return records.map((record) => {
+        const label = record.name || record.getCellValueAsString(primaryFieldId);
+        const score = fuzzyMatch(topLevelSearchTerm, label);
+        return { value: record.id, label, score };
+      }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
+    }, [topLevel, topLevelSearchTerm, workplanSources, goals, objectives, activities, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable]);
     if (!workplanSourcesTable || !goalsTable || !objectivesTable || !activitiesTable || !ttaSessionsTable) {
       return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 3, backgroundColor: "lightGray1", children: [
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "large", children: "Configuration Needed" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 162,
+          lineNumber: 351,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 2, children: "Please ensure your base has these tables with these exact names:" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 163,
+          lineNumber: 352,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginTop: 2, children: [
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Workplan Sources" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 167,
+            lineNumber: 356,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Goals" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 168,
+            lineNumber: 357,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Objectives" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 169,
+            lineNumber: 358,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Activities" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 170,
+            lineNumber: 359,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 T/TA Sessions" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 171,
+            lineNumber: 360,
             columnNumber: 21
           }, this)
         ] }, void 0, true, {
           fileName: "frontend/index.js",
-          lineNumber: 166,
+          lineNumber: 355,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 2, textColor: "light", children: "(Or update the table names in the code)" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 173,
+          lineNumber: 362,
           columnNumber: 17
         }, this)
       ] }, void 0, true, {
         fileName: "frontend/index.js",
-        lineNumber: 161,
+        lineNumber: 350,
         columnNumber: 13
       }, this);
     }
-    return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 3, backgroundColor: "lightGray1", minHeight: "100vh", children: [
+    return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 3, backgroundColor: "lightGray1", minHeight: "100vh", display: "flex", justifyContent: "center", children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { maxWidth: "800px", width: "100%", children: [
       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "xlarge", marginBottom: 3, children: "Work Report Selector" }, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 182,
-        columnNumber: 13
+        lineNumber: 372,
+        columnNumber: 17
       }, this),
       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
         import_ui.Box,
@@ -62152,20 +62262,206 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           backgroundColor: "white",
           padding: 3,
           marginBottom: 3,
-          borderRadius: "default",
-          border: "thick",
+          borderRadius: "large",
+          border: "none",
+          style: { boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.20)" },
           children: [
-            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Time Period" }, void 0, false, {
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 3, children: "What should the report cover?" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 192,
+              lineNumber: 383,
               columnNumber: 17
             }, this),
-            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "row", gap: 2, children: [
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { flex: 1, children: [
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { children: [
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Generate a report about:" }, void 0, false, {
+                fileName: "frontend/index.js",
+                lineNumber: 387,
+                columnNumber: 21
+              }, this),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", children: [
+                { value: "workplanSource", label: "Workplan Source" },
+                { value: "goal", label: "Goal" },
+                { value: "objective", label: "Objective" },
+                { value: "activity", label: "Activity" }
+              ].map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", alignItems: "center", gap: 2, marginY: 2, children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                  "input",
+                  {
+                    type: "radio",
+                    id: `topLevel-${option.value}`,
+                    name: "topLevel",
+                    value: option.value,
+                    checked: topLevel === option.value,
+                    onChange: () => handleTopLevelChange(option.value),
+                    style: { cursor: "pointer" }
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "frontend/index.js",
+                    lineNumber: 396,
+                    columnNumber: 33
+                  },
+                  this
+                ),
+                /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                  "label",
+                  {
+                    htmlFor: `topLevel-${option.value}`,
+                    style: { cursor: "pointer", marginBottom: 0, marginLeft: 8 },
+                    children: option.label
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "frontend/index.js",
+                    lineNumber: 405,
+                    columnNumber: 33
+                  },
+                  this
+                )
+              ] }, option.value, true, {
+                fileName: "frontend/index.js",
+                lineNumber: 395,
+                columnNumber: 29
+              }, this)) }, void 0, false, {
+                fileName: "frontend/index.js",
+                lineNumber: 388,
+                columnNumber: 21
+              }, this)
+            ] }, void 0, true, {
+              fileName: "frontend/index.js",
+              lineNumber: 386,
+              columnNumber: 17
+            }, this),
+            topLevel && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "row", gap: 3, marginBottom: 3, alignItems: "flex-end", children: [
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { flex: 1, ref: dropdownRef, maxWidth: "256px", marginRight: "32px", position: "relative", children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                  import_ui.Box,
+                  {
+                    id: "topLevelDropdown",
+                    padding: 2,
+                    backgroundColor: "white",
+                    border: "default",
+                    borderRadius: "default",
+                    onClick: () => setTopLevelDropdownOpen(!topLevelDropdownOpen),
+                    style: { cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: topLevelId ? filteredTopLevelOptions.find((opt) => opt.value === topLevelId)?.label || "Unknown" : `Select ${getReadableLabel(topLevel)}...` }, void 0, false, {
+                        fileName: "frontend/index.js",
+                        lineNumber: 431,
+                        columnNumber: 33
+                      }, this),
+                      /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Icon, { name: "caret", size: 16 }, void 0, false, {
+                        fileName: "frontend/index.js",
+                        lineNumber: 436,
+                        columnNumber: 33
+                      }, this)
+                    ]
+                  },
+                  void 0,
+                  true,
+                  {
+                    fileName: "frontend/index.js",
+                    lineNumber: 422,
+                    columnNumber: 29
+                  },
+                  this
+                ),
+                topLevelDropdownOpen && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                  import_ui.Box,
+                  {
+                    marginTop: 1,
+                    backgroundColor: "white",
+                    border: "default",
+                    borderRadius: "default",
+                    maxHeight: "300px",
+                    overflow: "auto",
+                    position: "absolute",
+                    zIndex: 10,
+                    style: { top: "100%", left: 0, right: 0, width: "100%", marginTop: "8px" },
+                    children: [
+                      /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 2, borderBottom: "default", children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                        import_ui.Input,
+                        {
+                          id: "topLevelSearch",
+                          type: "text",
+                          placeholder: `Search ${topLevel}...`,
+                          value: topLevelSearchTerm,
+                          onChange: (e) => setTopLevelSearchTerm(e.target.value),
+                          width: "100%"
+                        },
+                        void 0,
+                        false,
+                        {
+                          fileName: "frontend/index.js",
+                          lineNumber: 454,
+                          columnNumber: 41
+                        },
+                        this
+                      ) }, void 0, false, {
+                        fileName: "frontend/index.js",
+                        lineNumber: 453,
+                        columnNumber: 37
+                      }, this),
+                      filteredTopLevelOptions.length > 0 ? filteredTopLevelOptions.map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                        import_ui.Box,
+                        {
+                          padding: 2,
+                          borderBottom: "default",
+                          backgroundColor: topLevelId === option.value ? "lightBlue1" : "white",
+                          onClick: () => {
+                            setTopLevelId(option.value);
+                            setTopLevelSearchTerm("");
+                            setTopLevelDropdownOpen(false);
+                            setBottomLevel("");
+                          },
+                          style: { cursor: "pointer" },
+                          onMouseEnter: (e) => {
+                            e.currentTarget.style.backgroundColor = topLevelId === option.value ? "lightBlue1" : "lightGray1";
+                          },
+                          onMouseLeave: (e) => {
+                            e.currentTarget.style.backgroundColor = topLevelId === option.value ? "lightBlue1" : "white";
+                          },
+                          children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: option.label }, void 0, false, {
+                            fileName: "frontend/index.js",
+                            lineNumber: 486,
+                            columnNumber: 49
+                          }, this)
+                        },
+                        option.value,
+                        false,
+                        {
+                          fileName: "frontend/index.js",
+                          lineNumber: 467,
+                          columnNumber: 45
+                        },
+                        this
+                      )) : /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 2, textColor: "light", children: "No matches found" }, void 0, false, {
+                        fileName: "frontend/index.js",
+                        lineNumber: 490,
+                        columnNumber: 41
+                      }, this)
+                    ]
+                  },
+                  void 0,
+                  true,
+                  {
+                    fileName: "frontend/index.js",
+                    lineNumber: 441,
+                    columnNumber: 33
+                  },
+                  this
+                )
+              ] }, void 0, true, {
+                fileName: "frontend/index.js",
+                lineNumber: 420,
+                columnNumber: 25
+              }, this),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", marginRight: "16px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { htmlFor: "startDate", children: "Start Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 195,
-                  columnNumber: 25
+                  lineNumber: 500,
+                  columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
                   import_ui.Input,
@@ -62180,21 +62476,21 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 196,
-                    columnNumber: 25
+                    lineNumber: 501,
+                    columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 194,
-                columnNumber: 21
+                lineNumber: 499,
+                columnNumber: 25
               }, this),
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { flex: 1, children: [
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { htmlFor: "endDate", children: "End Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 205,
-                  columnNumber: 25
+                  lineNumber: 512,
+                  columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
                   import_ui.Input,
@@ -62209,301 +62505,76 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 206,
-                    columnNumber: 25
+                    lineNumber: 513,
+                    columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 204,
-                columnNumber: 21
+                lineNumber: 511,
+                columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 193,
-              columnNumber: 17
-            }, this)
-          ]
-        },
-        void 0,
-        true,
-        {
-          fileName: "frontend/index.js",
-          lineNumber: 185,
-          columnNumber: 13
-        },
-        this
-      ),
-      /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-        import_ui.Box,
-        {
-          backgroundColor: "white",
-          padding: 3,
-          marginBottom: 3,
-          borderRadius: "default",
-          border: "thick",
-          children: [
-            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Select Scope" }, void 0, false, {
-              fileName: "frontend/index.js",
-              lineNumber: 225,
-              columnNumber: 17
-            }, this),
-            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginBottom: 3, children: [
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { htmlFor: "workplanSource", children: "Workplan Source" }, void 0, false, {
-                fileName: "frontend/index.js",
-                lineNumber: 229,
-                columnNumber: 21
-              }, this),
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                import_ui.Select,
-                {
-                  id: "workplanSource",
-                  options: [
-                    { value: "", label: "Select a workplan source..." },
-                    ...workplanSources.map((s) => ({
-                      value: s.id,
-                      label: s.name || s.getCellValueAsString(workplanSourcesTable.primaryField.id)
-                    }))
-                  ],
-                  value: selectedWorkplanSourceId,
-                  onChange: handleWorkplanSourceChange,
-                  width: "100%"
-                },
-                void 0,
-                false,
-                {
-                  fileName: "frontend/index.js",
-                  lineNumber: 230,
-                  columnNumber: 21
-                },
-                this
-              )
-            ] }, void 0, true, {
-              fileName: "frontend/index.js",
-              lineNumber: 228,
-              columnNumber: 17
-            }, this),
-            selectedWorkplanSourceId && filteredGoals.length > 0 && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginBottom: 3, children: [
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { children: [
-                "Goals (",
-                selectedGoalIds.length,
-                " selected)"
-              ] }, void 0, true, {
-                fileName: "frontend/index.js",
-                lineNumber: 248,
-                columnNumber: 25
-              }, this),
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                import_ui.Box,
-                {
-                  border: "default",
-                  borderRadius: "default",
-                  padding: 2,
-                  maxHeight: "200px",
-                  overflow: "auto",
-                  backgroundColor: "lightGray1",
-                  children: filteredGoals.map((goal) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                    import_ui.Box,
-                    {
-                      display: "flex",
-                      alignItems: "center",
-                      paddingY: 1,
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                          "input",
-                          {
-                            type: "checkbox",
-                            checked: selectedGoalIds.includes(goal.id),
-                            onChange: () => handleGoalToggle(goal.id),
-                            style: { marginRight: "8px" }
-                          },
-                          void 0,
-                          false,
-                          {
-                            fileName: "frontend/index.js",
-                            lineNumber: 264,
-                            columnNumber: 37
-                          },
-                          this
-                        ),
-                        /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: goal.name || goal.getCellValueAsString(goalsTable.primaryField.id) }, void 0, false, {
-                          fileName: "frontend/index.js",
-                          lineNumber: 270,
-                          columnNumber: 37
-                        }, this)
-                      ]
-                    },
-                    goal.id,
-                    true,
-                    {
-                      fileName: "frontend/index.js",
-                      lineNumber: 258,
-                      columnNumber: 33
-                    },
-                    this
-                  ))
-                },
-                void 0,
-                false,
-                {
-                  fileName: "frontend/index.js",
-                  lineNumber: 249,
-                  columnNumber: 25
-                },
-                this
-              )
-            ] }, void 0, true, {
-              fileName: "frontend/index.js",
-              lineNumber: 247,
+              lineNumber: 418,
               columnNumber: 21
             }, this),
-            selectedGoalIds.length > 0 && filteredObjectives.length > 0 && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginBottom: 3, children: [
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { children: [
-                "Objectives (",
-                selectedObjectiveIds.length,
-                " selected)"
-              ] }, void 0, true, {
+            topLevel && topLevelId && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { children: [
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Show detail down to:" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 282,
+                lineNumber: 527,
                 columnNumber: 25
               }, this),
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                import_ui.Box,
-                {
-                  border: "default",
-                  borderRadius: "default",
-                  padding: 2,
-                  maxHeight: "200px",
-                  overflow: "auto",
-                  backgroundColor: "lightGray1",
-                  children: filteredObjectives.map((objective) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                    import_ui.Box,
-                    {
-                      display: "flex",
-                      alignItems: "center",
-                      paddingY: 1,
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                          "input",
-                          {
-                            type: "checkbox",
-                            checked: selectedObjectiveIds.includes(objective.id),
-                            onChange: () => handleObjectiveToggle(objective.id),
-                            style: { marginRight: "8px" }
-                          },
-                          void 0,
-                          false,
-                          {
-                            fileName: "frontend/index.js",
-                            lineNumber: 298,
-                            columnNumber: 37
-                          },
-                          this
-                        ),
-                        /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: objective.name || objective.getCellValueAsString(objectivesTable.primaryField.id) }, void 0, false, {
-                          fileName: "frontend/index.js",
-                          lineNumber: 304,
-                          columnNumber: 37
-                        }, this)
-                      ]
-                    },
-                    objective.id,
-                    true,
-                    {
-                      fileName: "frontend/index.js",
-                      lineNumber: 292,
-                      columnNumber: 33
-                    },
-                    this
-                  ))
-                },
-                void 0,
-                false,
-                {
-                  fileName: "frontend/index.js",
-                  lineNumber: 283,
-                  columnNumber: 25
-                },
-                this
-              )
-            ] }, void 0, true, {
-              fileName: "frontend/index.js",
-              lineNumber: 281,
-              columnNumber: 21
-            }, this),
-            selectedObjectiveIds.length > 0 && filteredActivities.length > 0 && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginBottom: 3, children: [
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { children: [
-                "Activities (",
-                selectedActivityIds.length,
-                " selected)"
-              ] }, void 0, true, {
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 2, children: getBottomLevelOptions().map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", alignItems: "center", gap: 2, marginY: 2, children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                  "input",
+                  {
+                    type: "radio",
+                    id: `bottomLevel-${option.value}`,
+                    name: "bottomLevel",
+                    value: option.value,
+                    checked: bottomLevel === option.value,
+                    onChange: () => handleBottomLevelChange(option.value),
+                    style: { cursor: "pointer" }
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "frontend/index.js",
+                    lineNumber: 531,
+                    columnNumber: 37
+                  },
+                  this
+                ),
+                /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                  "label",
+                  {
+                    htmlFor: `bottomLevel-${option.value}`,
+                    style: { cursor: "pointer", marginBottom: 0, marginLeft: 8 },
+                    children: option.label
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "frontend/index.js",
+                    lineNumber: 540,
+                    columnNumber: 37
+                  },
+                  this
+                )
+              ] }, option.value, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 316,
+                lineNumber: 530,
+                columnNumber: 33
+              }, this)) }, void 0, false, {
+                fileName: "frontend/index.js",
+                lineNumber: 528,
                 columnNumber: 25
-              }, this),
-              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                import_ui.Box,
-                {
-                  border: "default",
-                  borderRadius: "default",
-                  padding: 2,
-                  maxHeight: "200px",
-                  overflow: "auto",
-                  backgroundColor: "lightGray1",
-                  children: filteredActivities.map((activity) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                    import_ui.Box,
-                    {
-                      display: "flex",
-                      alignItems: "center",
-                      paddingY: 1,
-                      children: [
-                        /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
-                          "input",
-                          {
-                            type: "checkbox",
-                            checked: selectedActivityIds.includes(activity.id),
-                            onChange: () => handleActivityToggle(activity.id),
-                            style: { marginRight: "8px" }
-                          },
-                          void 0,
-                          false,
-                          {
-                            fileName: "frontend/index.js",
-                            lineNumber: 332,
-                            columnNumber: 37
-                          },
-                          this
-                        ),
-                        /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: activity.name || activity.getCellValueAsString(activitiesTable.primaryField.id) }, void 0, false, {
-                          fileName: "frontend/index.js",
-                          lineNumber: 338,
-                          columnNumber: 37
-                        }, this)
-                      ]
-                    },
-                    activity.id,
-                    true,
-                    {
-                      fileName: "frontend/index.js",
-                      lineNumber: 326,
-                      columnNumber: 33
-                    },
-                    this
-                  ))
-                },
-                void 0,
-                false,
-                {
-                  fileName: "frontend/index.js",
-                  lineNumber: 317,
-                  columnNumber: 25
-                },
-                this
-              )
+              }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 315,
+              lineNumber: 526,
               columnNumber: 21
             }, this)
           ]
@@ -62512,8 +62583,8 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 218,
-          columnNumber: 13
+          lineNumber: 375,
+          columnNumber: 17
         },
         this
       ),
@@ -62527,19 +62598,19 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 1, children: "Summary" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 355,
+              lineNumber: 560,
               columnNumber: 17
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "large", children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("strong", { children: filteredSessions.length }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 357,
+                lineNumber: 562,
                 columnNumber: 21
               }, this),
               " T/TA Sessions match your selection"
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 356,
+              lineNumber: 561,
               columnNumber: 17
             }, this),
             startDate && endDate && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 1, textColor: "light", children: [
@@ -62549,7 +62620,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               new Date(endDate).toLocaleDateString()
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 360,
+              lineNumber: 565,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62565,7 +62636,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 364,
+                lineNumber: 569,
                 columnNumber: 17
               },
               this
@@ -62576,26 +62647,56 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 349,
+          lineNumber: 554,
           columnNumber: 13
         },
         this
       )
     ] }, void 0, true, {
       fileName: "frontend/index.js",
-      lineNumber: 181,
+      lineNumber: 371,
+      columnNumber: 13
+    }, this) }, void 0, false, {
+      fileName: "frontend/index.js",
+      lineNumber: 370,
       columnNumber: 9
     }, this);
   }
-  var import_ui, import_react, import_jsx_dev_runtime;
+  var import_ui, import_react, import_jsx_dev_runtime, getReadableLabel, fuzzyMatch;
   var init_frontend = __esm({
     "frontend/index.js"() {
       import_ui = __toESM(require_ui2());
       import_react = __toESM(require_react());
       import_jsx_dev_runtime = __toESM(require_jsx_dev_runtime());
+      getReadableLabel = (value) => {
+        const labelMap = {
+          "workplanSource": "workplan source",
+          "goal": "goal",
+          "objective": "objective",
+          "activity": "activity"
+        };
+        return labelMap[value] || value;
+      };
+      fuzzyMatch = (searchTerm, target) => {
+        const lowerSearch = searchTerm.toLowerCase();
+        const lowerTarget = target.toLowerCase();
+        if (lowerTarget === lowerSearch) return 1e3;
+        if (lowerTarget.startsWith(lowerSearch)) return 500;
+        if (lowerTarget.includes(lowerSearch)) return 100;
+        let searchIdx = 0;
+        for (let i = 0; i < lowerTarget.length && searchIdx < lowerSearch.length; i++) {
+          if (lowerTarget[i] === lowerSearch[searchIdx]) {
+            searchIdx++;
+          }
+        }
+        if (searchIdx === lowerSearch.length) {
+          return 10;
+        }
+        return 0;
+      };
       (0, import_ui.initializeBlock)(() => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(ReportSelectorApp, {}, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 377,
+        lineNumber: 583,
         columnNumber: 23
       }));
     }

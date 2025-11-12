@@ -6,23 +6,84 @@ import {
     Heading,
     Text,
     Button,
-    Select,
     Label,
     Input,
+    Icon,
 } from '@airtable/blocks/ui';
-import React, {useState, useMemo} from 'react';
+import React, {useState, useMemo, useEffect, useRef} from 'react';
+
+// Convert camelCase or backend names to readable labels
+const getReadableLabel = (value) => {
+    const labelMap = {
+        'workplanSource': 'workplan source',
+        'goal': 'goal',
+        'objective': 'objective',
+        'activity': 'activity',
+    };
+    return labelMap[value] || value;
+};
+
+// Simple fuzzy match function
+const fuzzyMatch = (searchTerm, target) => {
+    const lowerSearch = searchTerm.toLowerCase();
+    const lowerTarget = target.toLowerCase();
+
+    // Exact match gets highest priority
+    if (lowerTarget === lowerSearch) return 1000;
+
+    // Starts with search term
+    if (lowerTarget.startsWith(lowerSearch)) return 500;
+
+    // Contains search term as a substring
+    if (lowerTarget.includes(lowerSearch)) return 100;
+
+    // Fuzzy match: all characters in search appear in target in order
+    let searchIdx = 0;
+    for (let i = 0; i < lowerTarget.length && searchIdx < lowerSearch.length; i++) {
+        if (lowerTarget[i] === lowerSearch[searchIdx]) {
+            searchIdx++;
+        }
+    }
+    if (searchIdx === lowerSearch.length) {
+        return 10; // All characters matched in order
+    }
+
+    return 0; // No match
+};
 
 function ReportSelectorApp() {
     const base = useBase();
-    
+
     // State for selections
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [selectedWorkplanSourceId, setSelectedWorkplanSourceId] = useState('');
-    const [selectedGoalIds, setSelectedGoalIds] = useState([]);
-    const [selectedObjectiveIds, setSelectedObjectiveIds] = useState([]);
-    const [selectedActivityIds, setSelectedActivityIds] = useState([]);
-    
+
+    // Top-level selection (what level the report is about)
+    const [topLevel, setTopLevel] = useState(''); // 'workplanSource', 'goal', 'objective', 'activity'
+    const [topLevelId, setTopLevelId] = useState(''); // single record ID
+    const [topLevelSearchTerm, setTopLevelSearchTerm] = useState(''); // for searching
+    const [topLevelDropdownOpen, setTopLevelDropdownOpen] = useState(false); // dropdown open state
+
+    // Bottom-level selection (the granularity of detail)
+    const [bottomLevel, setBottomLevel] = useState(''); // depends on topLevel
+
+    // Ref for dropdown to handle click-outside
+    const dropdownRef = useRef(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setTopLevelDropdownOpen(false);
+            }
+        };
+
+        if (topLevelDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [topLevelDropdownOpen]);
+
     // Get tables - adjust these names to match your base
     const workplanSourcesTable = base.getTableById('tbl72KzV8O1LBmUXj');
     const goalsTable = base.getTableById('tbllMymEmuGkCucVM');
@@ -38,122 +99,250 @@ function ReportSelectorApp() {
     const ttaSessions = useRecords(ttaSessionsTable);
     
     // Find link fields (adjust field names as needed)
-    const goalsLinkField = goalsTable?.getFieldByNameIfExists('Workplan Source') || 
-                           goalsTable?.fields.find(f => f.type === 'multipleRecordLinks');
+    const goalsLinkField = goalsTable.getFieldById('fldIdc8oiivatAf3v')
     
-    const objectivesLinkField = objectivesTable?.getFieldByNameIfExists('Goal') ||
-                                objectivesTable?.fields.find(f => f.type === 'multipleRecordLinks');
+    const objectivesLinkField = objectivesTable.getFieldById('fldSS5U6Ou0OZjjCJ')
     
-    const activitiesLinkField = activitiesTable?.getFieldByNameIfExists('Objective') ||
-                                activitiesTable?.fields.find(f => f.type === 'multipleRecordLinks');
+    const objectivesToSourcesLinkField = objectivesTable.getFieldById('fldkQACpESCkddXpS')
+
+    const activitiesLinkField = activitiesTable.getFieldById('fldOg2Op1nWUYUgaW')
     
-    const ttaSessionsLinkField = ttaSessionsTable?.getFieldByNameIfExists('Activities') ||
-                                 ttaSessionsTable?.fields.find(f => f.type === 'multipleRecordLinks');
+    const activitiesStartDateField = activitiesTable.getFieldById('fldKQTLdFNry5aZjw')
+
+    const activitiesEndDateField = activitiesTable.getFieldById('fld4OE8aBXIPHWIdK')
+
+    const ttaSessionsLinkField = ttaSessionsTable.getFieldById('fldmE4r4v1OwA1xSY')
     
-    const ttaSessionsDateField = ttaSessionsTable?.fields.find(f => f.type === 'date' || f.type === 'dateTime');
+    const ttaSessionsDateField = ttaSessionsTable.getFieldById('fldXcKUaiiJTmCXRa')
     
-    // Filter goals by selected workplan source
-    const filteredGoals = useMemo(() => {
-        if (!selectedWorkplanSourceId || !goals || !goalsLinkField) return [];
-        return goals.filter(goal => {
-            const linkedRecords = goal.getCellValue(goalsLinkField.id);
-            if (!linkedRecords) return false;
-            return linkedRecords.some(link => link.id === selectedWorkplanSourceId);
-        });
-    }, [goals, selectedWorkplanSourceId, goalsLinkField]);
-    
-    // Filter objectives by selected goals
-    const filteredObjectives = useMemo(() => {
-        if (selectedGoalIds.length === 0 || !objectives || !objectivesLinkField) return [];
-        return objectives.filter(objective => {
-            const linkedRecords = objective.getCellValue(objectivesLinkField.id);
-            if (!linkedRecords) return false;
-            return linkedRecords.some(link => selectedGoalIds.includes(link.id));
-        });
-    }, [objectives, selectedGoalIds, objectivesLinkField]);
-    
-    // Filter activities by selected objectives
-    const filteredActivities = useMemo(() => {
-        if (selectedObjectiveIds.length === 0 || !activities || !activitiesLinkField) return [];
-        return activities.filter(activity => {
-            const linkedRecords = activity.getCellValue(activitiesLinkField.id);
-            if (!linkedRecords) return false;
-            return linkedRecords.some(link => selectedObjectiveIds.includes(link.id));
-        });
-    }, [activities, selectedObjectiveIds, activitiesLinkField]);
+    // Get the relevant IDs to filter sessions based on top/bottom level selections
+    const relevantActivityIds = useMemo(() => {
+        if (!topLevel || !topLevelId) return [];
+
+        // Build the chain of IDs based on the top level and bottom level
+        switch (topLevel) {
+            case 'workplanSource': {
+                // Filter activities based on workplan source and bottom level
+                if (bottomLevel === 'goal') {
+                    // Activities linked to goals linked to workplan source
+                    const goalIds = goals.filter(goal => {
+                        const linked = goal.getCellValue(goalsLinkField?.id);
+                        return linked && linked.some(l => l.id === topLevelId);
+                    }).map(g => g.id);
+
+                    return activities.filter(activity => {
+                        const linked = activity.getCellValue(activitiesLinkField?.id);
+                        return linked && linked.some(l => {
+                            const objLinkedToGoal = objectives.find(obj => obj.id === l.id);
+                            if (!objLinkedToGoal) return false;
+                            const objLinked = objLinkedToGoal.getCellValue(objectivesLinkField?.id);
+                            return objLinked && objLinked.some(ol => goalIds.includes(ol.id));
+                        });
+                    }).map(a => a.id);
+                } else if (bottomLevel === 'objective') {
+                    // Activities linked to objectives linked to workplan source
+                    const objIds = objectives.filter(obj => {
+                        const linked = obj.getCellValue(objectivesToSourcesLinkField?.id);
+                        return linked && linked.some(l => l.id === topLevelId);
+                    }).map(o => o.id);
+
+                    return activities.filter(activity => {
+                        const linked = activity.getCellValue(activitiesLinkField?.id);
+                        return linked && linked.some(l => objIds.includes(l.id));
+                    }).map(a => a.id);
+                } else if (bottomLevel === 'activity') {
+                    // Activities directly (need to trace back to workplan source)
+                    return activities.filter(activity => {
+                        const linkedObjs = activity.getCellValue(activitiesLinkField?.id);
+                        if (!linkedObjs) return false;
+                        return linkedObjs.some(lo => {
+                            const obj = objectives.find(o => o.id === lo.id);
+                            if (!obj) return false;
+                            const linked = obj.getCellValue(objectivesToSourcesLinkField?.id);
+                            return linked && linked.some(l => l.id === topLevelId);
+                        });
+                    }).map(a => a.id);
+                }
+                return [];
+            }
+            case 'goal': {
+                // Activities linked to objectives linked to selected goals
+                if (bottomLevel === 'goal') {
+                    return [];  // Can't show activities if stopping at goal level
+                } else if (bottomLevel === 'objective') {
+                    const objIds = objectives.filter(obj => {
+                        const linked = obj.getCellValue(objectivesLinkField?.id);
+                        return linked && linked.some(l => l.id === topLevelId);
+                    }).map(o => o.id);
+
+                    return activities.filter(activity => {
+                        const linked = activity.getCellValue(activitiesLinkField?.id);
+                        return linked && linked.some(l => objIds.includes(l.id));
+                    }).map(a => a.id);
+                } else if (bottomLevel === 'activity') {
+                    return activities.filter(activity => {
+                        const linkedObjs = activity.getCellValue(activitiesLinkField?.id);
+                        if (!linkedObjs) return false;
+                        return linkedObjs.some(lo => {
+                            const obj = objectives.find(o => o.id === lo.id);
+                            if (!obj) return false;
+                            const linked = obj.getCellValue(objectivesLinkField?.id);
+                            return linked && linked.some(l => l.id === topLevelId);
+                        });
+                    }).map(a => a.id);
+                }
+                return [];
+            }
+            case 'objective': {
+                // Activities linked to selected objectives
+                if (bottomLevel === 'objective') {
+                    return [];  // Can't show activities if stopping at objective level
+                } else if (bottomLevel === 'activity') {
+                    return activities.filter(activity => {
+                        const linked = activity.getCellValue(activitiesLinkField?.id);
+                        return linked && linked.some(l => l.id === topLevelId);
+                    }).map(a => a.id);
+                }
+                return [];
+            }
+            case 'activity': {
+                // Direct activity selection
+                return [topLevelId];
+            }
+            default:
+                return [];
+        }
+    }, [topLevel, topLevelId, bottomLevel, goals, objectives, activities, goalsLinkField, objectivesLinkField, objectivesToSourcesLinkField, activitiesLinkField]);
     
     // Filter T/TA sessions
     const filteredSessions = useMemo(() => {
         if (!ttaSessions) return [];
-        
+
         return ttaSessions.filter(session => {
             // Filter by activities if any are selected
-            if (selectedActivityIds.length > 0 && ttaSessionsLinkField) {
+            if (relevantActivityIds.length > 0 && ttaSessionsLinkField) {
                 const linkedActivities = session.getCellValue(ttaSessionsLinkField.id);
                 if (!linkedActivities) return false;
-                const hasSelectedActivity = linkedActivities.some(link => 
-                    selectedActivityIds.includes(link.id)
+                const hasSelectedActivity = linkedActivities.some(link =>
+                    relevantActivityIds.includes(link.id)
                 );
                 if (!hasSelectedActivity) return false;
             }
-            
+
             // Filter by date range
             if ((startDate || endDate) && ttaSessionsDateField) {
                 const sessionDate = session.getCellValue(ttaSessionsDateField.id);
                 if (!sessionDate) return false;
-                
+
                 const date = new Date(sessionDate);
                 if (startDate && date < new Date(startDate)) return false;
                 if (endDate && date > new Date(endDate)) return false;
             }
-            
+
             return true;
         });
-    }, [ttaSessions, selectedActivityIds, startDate, endDate, ttaSessionsLinkField, ttaSessionsDateField]);
+    }, [ttaSessions, relevantActivityIds, startDate, endDate, ttaSessionsLinkField, ttaSessionsDateField]);
     
-    // Handle selections
-    const handleWorkplanSourceChange = (value) => {
-        setSelectedWorkplanSourceId(value);
-        setSelectedGoalIds([]);
-        setSelectedObjectiveIds([]);
-        setSelectedActivityIds([]);
+    // Handle top-level selection change
+    const handleTopLevelChange = (value) => {
+        setTopLevel(value);
+        setTopLevelId('');
+        setBottomLevel('');
     };
-    
-    const handleGoalToggle = (goalId) => {
-        setSelectedGoalIds(prev => {
-            const isSelected = prev.includes(goalId);
-            if (isSelected) {
-                return prev.filter(id => id !== goalId);
-            } else {
-                return [...prev, goalId];
-            }
+
+    // Handle bottom-level selection change
+    const handleBottomLevelChange = (value) => {
+        setBottomLevel(value);
+    };
+
+    // Check if selected workplan source has any goals
+    const selectedWorkplanSourceHasGoals = useMemo(() => {
+        if (topLevel !== 'workplanSource' || !topLevelId) return true; // default to true to show goals
+
+        return goals.some(goal => {
+            const linked = goal.getCellValue(goalsLinkField?.id);
+            return linked && linked.some(l => l.id === topLevelId);
         });
-        setSelectedObjectiveIds([]);
-        setSelectedActivityIds([]);
+    }, [topLevel, topLevelId, goals, goalsLinkField]);
+
+    // Get available bottom-level options based on top-level selection
+    const getBottomLevelOptions = () => {
+        switch (topLevel) {
+            case 'workplanSource':
+                // If this workplan source has goals, show all options. Otherwise, only objectives and activities
+                if (selectedWorkplanSourceHasGoals) {
+                    return [
+                        { value: 'goal', label: 'Goal' },
+                        { value: 'objective', label: 'Objective' },
+                        { value: 'activity', label: 'Activity' },
+                    ];
+                } else {
+                    return [
+                        { value: 'objective', label: 'Objective' },
+                        { value: 'activity', label: 'Activity' },
+                    ];
+                }
+            case 'goal':
+                return [
+                    { value: 'goal', label: 'Goal only' },
+                    { value: 'objective', label: 'Objective' },
+                    { value: 'activity', label: 'Activity' },
+                ];
+            case 'objective':
+                return [
+                    { value: 'objective', label: 'Objective only' },
+                    { value: 'activity', label: 'Activity' },
+                ];
+            case 'activity':
+                return [
+                    { value: 'activity', label: 'Activity only' },
+                ];
+            default:
+                return [];
+        }
     };
-    
-    const handleObjectiveToggle = (objectiveId) => {
-        setSelectedObjectiveIds(prev => {
-            const isSelected = prev.includes(objectiveId);
-            if (isSelected) {
-                return prev.filter(id => id !== objectiveId);
-            } else {
-                return [...prev, objectiveId];
-            }
-        });
-        setSelectedActivityIds([]);
-    };
-    
-    const handleActivityToggle = (activityId) => {
-        setSelectedActivityIds(prev => {
-            const isSelected = prev.includes(activityId);
-            if (isSelected) {
-                return prev.filter(id => id !== activityId);
-            } else {
-                return [...prev, activityId];
-            }
-        });
-    };
+
+    // Reset bottom level if it's no longer a valid option
+    useMemo(() => {
+        const validOptions = getBottomLevelOptions().map(opt => opt.value);
+        if (bottomLevel && !validOptions.includes(bottomLevel)) {
+            setBottomLevel('');
+        }
+    }, [bottomLevel, topLevel, selectedWorkplanSourceHasGoals]);
+
+    // Get filtered options for top-level selector based on search term
+    const filteredTopLevelOptions = useMemo(() => {
+        if (!topLevel) return [];
+
+        const records = topLevel === 'workplanSource' ? workplanSources :
+                       topLevel === 'goal' ? goals :
+                       topLevel === 'objective' ? objectives :
+                       activities;
+
+        const primaryFieldId = topLevel === 'workplanSource' ? workplanSourcesTable.primaryField.id :
+                              topLevel === 'goal' ? goalsTable.primaryField.id :
+                              topLevel === 'objective' ? objectivesTable.primaryField.id :
+                              activitiesTable.primaryField.id;
+
+        if (!topLevelSearchTerm) {
+            // No search term, return all records
+            return records.map(record => ({
+                value: record.id,
+                label: record.name || record.getCellValueAsString(primaryFieldId),
+                score: 0
+            }));
+        }
+
+        // Filter and score based on search term
+        return records
+            .map(record => {
+                const label = record.name || record.getCellValueAsString(primaryFieldId);
+                const score = fuzzyMatch(topLevelSearchTerm, label);
+                return { value: record.id, label, score };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score);
+    }, [topLevel, topLevelSearchTerm, workplanSources, goals, objectives, activities, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable]);
     
     // Check if tables exist
     if (!workplanSourcesTable || !goalsTable || !objectivesTable || !activitiesTable || !ttaSessionsTable) {
@@ -178,173 +367,189 @@ function ReportSelectorApp() {
     }
     
     return (
-        <Box padding={3} backgroundColor="lightGray1" minHeight="100vh">
-            <Heading size="xlarge" marginBottom={3}>Work Report Selector</Heading>
-            
-            {/* Date Range */}
-            <Box 
-                backgroundColor="white" 
-                padding={3} 
+        <Box padding={3} backgroundColor="lightGray1" minHeight="100vh" display="flex" justifyContent="center">
+            <Box maxWidth="800px" width="100%">
+                <Heading size="xlarge" marginBottom={3}>Work Report Selector</Heading>
+
+                {/* Report Level Selection */}
+                <Box
+                backgroundColor="white"
+                padding={3}
                 marginBottom={3}
-                borderRadius="default"
-                border="thick"
+                borderRadius="large"
+                border="none"
+                style={{ boxShadow: '0 4px 8px 0 rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.20)' }}
             >
-                <Heading size="small" marginBottom={2}>Time Period</Heading>
-                <Box display="flex" flexDirection="row" gap={2}>
-                    <Box flex={1}>
-                        <Label htmlFor="startDate">Start Date</Label>
-                        <Input
-                            id="startDate"
-                            type="date"
-                            value={startDate}
-                            onChange={e => setStartDate(e.target.value)}
-                            width="100%"
-                        />
-                    </Box>
-                    <Box flex={1}>
-                        <Label htmlFor="endDate">End Date</Label>
-                        <Input
-                            id="endDate"
-                            type="date"
-                            value={endDate}
-                            onChange={e => setEndDate(e.target.value)}
-                            width="100%"
-                        />
+                <Heading size="small" marginBottom={3}>What should the report cover?</Heading>
+
+                {/* Row 1: Top-level selector */}
+                <Box>
+                    <Text size="small" marginBottom={2} textColor="light">Generate a report about:</Text>
+                    <Box display="flex" flexDirection="column">
+                        {[
+                            { value: 'workplanSource', label: 'Workplan Source' },
+                            { value: 'goal', label: 'Goal' },
+                            { value: 'objective', label: 'Objective' },
+                            { value: 'activity', label: 'Activity' },
+                        ].map(option => (
+                            <Box key={option.value} display="flex" alignItems="center" gap={2} marginY={2}>
+                                <input
+                                    type="radio"
+                                    id={`topLevel-${option.value}`}
+                                    name="topLevel"
+                                    value={option.value}
+                                    checked={topLevel === option.value}
+                                    onChange={() => handleTopLevelChange(option.value)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                                <label
+                                    htmlFor={`topLevel-${option.value}`}
+                                    style={{ cursor: 'pointer', marginBottom: 0, marginLeft: 8 }}
+                                >
+                                    {option.label}
+                                </label>
+                            </Box>
+                        ))}
                     </Box>
                 </Box>
+
+                {/* Row 2: Top-level picker, start date, and end date */}
+                {topLevel && (
+                    <Box display="flex" flexDirection="row" gap={3} marginBottom={3} alignItems="flex-end">
+                        {/* Left: Item picker dropdown */}
+                        <Box flex={1} ref={dropdownRef} maxWidth="256px" marginRight="32px" position="relative">
+                            {/* Dropdown trigger button */}
+                            <Box
+                                id="topLevelDropdown"
+                                padding={2}
+                                backgroundColor="white"
+                                border="default"
+                                borderRadius="default"
+                                onClick={() => setTopLevelDropdownOpen(!topLevelDropdownOpen)}
+                                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            >
+                                <Text>
+                                    {topLevelId
+                                        ? filteredTopLevelOptions.find(opt => opt.value === topLevelId)?.label || 'Unknown'
+                                        : `Select ${getReadableLabel(topLevel)}...`}
+                                </Text>
+                                <Icon name="caret" size={16} />
+                            </Box>
+
+                            {/* Dropdown menu */}
+                            {topLevelDropdownOpen && (
+                                <Box
+                                    marginTop={1}
+                                    backgroundColor="white"
+                                    border="default"
+                                    borderRadius="default"
+                                    maxHeight="300px"
+                                    overflow="auto"
+                                    position="absolute"
+                                    zIndex={10}
+                                    style={{ top: '100%', left: 0, right: 0, width: '100%', marginTop: '8px' }}
+                                >
+                                    {/* Search input */}
+                                    <Box padding={2} borderBottom="default">
+                                        <Input
+                                            id="topLevelSearch"
+                                            type="text"
+                                            placeholder={`Search ${topLevel}...`}
+                                            value={topLevelSearchTerm}
+                                            onChange={(e) => setTopLevelSearchTerm(e.target.value)}
+                                            width="100%"
+                                        />
+                                    </Box>
+
+                                    {/* Options list */}
+                                    {filteredTopLevelOptions.length > 0 ? (
+                                        filteredTopLevelOptions.map((option) => (
+                                            <Box
+                                                key={option.value}
+                                                padding={2}
+                                                borderBottom="default"
+                                                backgroundColor={topLevelId === option.value ? 'lightBlue1' : 'white'}
+                                                onClick={() => {
+                                                    setTopLevelId(option.value);
+                                                    setTopLevelSearchTerm('');
+                                                    setTopLevelDropdownOpen(false);
+                                                    setBottomLevel('');
+                                                }}
+                                                style={{ cursor: 'pointer' }}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.backgroundColor = topLevelId === option.value ? 'lightBlue1' : 'lightGray1';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.backgroundColor = topLevelId === option.value ? 'lightBlue1' : 'white';
+                                                }}
+                                            >
+                                                <Text>{option.label}</Text>
+                                            </Box>
+                                        ))
+                                    ) : (
+                                        <Box padding={2} textColor="light">
+                                            No matches found
+                                        </Box>
+                                    )}
+                                </Box>
+                            )}
+                        </Box>
+
+                        {/* Middle: Start Date */}
+                        <Box display="flex" flexDirection="column" gap={1} minWidth="150px" marginRight="16px">
+                            <Label htmlFor="startDate">Start Date</Label>
+                            <Input
+                                id="startDate"
+                                type="date"
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                                width="100%"
+                            />
+                        </Box>
+
+                        {/* Right: End Date */}
+                        <Box display="flex" flexDirection="column" gap={1} minWidth="150px">
+                            <Label htmlFor="endDate">End Date</Label>
+                            <Input
+                                id="endDate"
+                                type="date"
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                                width="100%"
+                            />
+                        </Box>
+                    </Box>
+                )}
+
+                {/* Row 3: Bottom-level selector - only shows after top level is selected */}
+                {topLevel && topLevelId && (
+                    <Box>
+                        <Text size="small" marginBottom={2} textColor="light">Show detail down to:</Text>
+                        <Box display="flex" flexDirection="column" gap={2}>
+                            {getBottomLevelOptions().map(option => (
+                                <Box key={option.value} display="flex" alignItems="center" gap={2} marginY={2}>
+                                    <input
+                                        type="radio"
+                                        id={`bottomLevel-${option.value}`}
+                                        name="bottomLevel"
+                                        value={option.value}
+                                        checked={bottomLevel === option.value}
+                                        onChange={() => handleBottomLevelChange(option.value)}
+                                        style={{ cursor: 'pointer' }}
+                                    />
+                                    <label
+                                        htmlFor={`bottomLevel-${option.value}`}
+                                        style={{ cursor: 'pointer', marginBottom: 0, marginLeft: 8 }}
+                                    >
+                                        {option.label}
+                                    </label>
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                )}
             </Box>
-            
-            {/* Hierarchy Selection */}
-            <Box 
-                backgroundColor="white" 
-                padding={3} 
-                marginBottom={3}
-                borderRadius="default"
-                border="thick"
-            >
-                <Heading size="small" marginBottom={2}>Select Scope</Heading>
-                
-                {/* Workplan Source */}
-                <Box marginBottom={3}>
-                    <Label htmlFor="workplanSource">Workplan Source</Label>
-                    <Select
-                        id="workplanSource"
-                        options={[
-                            {value: '', label: 'Select a workplan source...'},
-                            ...workplanSources.map(s => ({
-                                value: s.id,
-                                label: s.name || s.getCellValueAsString(workplanSourcesTable.primaryField.id)
-                            }))
-                        ]}
-                        value={selectedWorkplanSourceId}
-                        onChange={handleWorkplanSourceChange}
-                        width="100%"
-                    />
-                </Box>
-                
-                {/* Goals */}
-                {selectedWorkplanSourceId && filteredGoals.length > 0 && (
-                    <Box marginBottom={3}>
-                        <Label>Goals ({selectedGoalIds.length} selected)</Label>
-                        <Box 
-                            border="default"
-                            borderRadius="default"
-                            padding={2}
-                            maxHeight="200px"
-                            overflow="auto"
-                            backgroundColor="lightGray1"
-                        >
-                            {filteredGoals.map(goal => (
-                                <Box 
-                                    key={goal.id}
-                                    display="flex"
-                                    alignItems="center"
-                                    paddingY={1}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedGoalIds.includes(goal.id)}
-                                        onChange={() => handleGoalToggle(goal.id)}
-                                        style={{marginRight: '8px'}}
-                                    />
-                                    <Text>
-                                        {goal.name || goal.getCellValueAsString(goalsTable.primaryField.id)}
-                                    </Text>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
-                )}
-                
-                {/* Objectives */}
-                {selectedGoalIds.length > 0 && filteredObjectives.length > 0 && (
-                    <Box marginBottom={3}>
-                        <Label>Objectives ({selectedObjectiveIds.length} selected)</Label>
-                        <Box 
-                            border="default"
-                            borderRadius="default"
-                            padding={2}
-                            maxHeight="200px"
-                            overflow="auto"
-                            backgroundColor="lightGray1"
-                        >
-                            {filteredObjectives.map(objective => (
-                                <Box 
-                                    key={objective.id}
-                                    display="flex"
-                                    alignItems="center"
-                                    paddingY={1}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedObjectiveIds.includes(objective.id)}
-                                        onChange={() => handleObjectiveToggle(objective.id)}
-                                        style={{marginRight: '8px'}}
-                                    />
-                                    <Text>
-                                        {objective.name || objective.getCellValueAsString(objectivesTable.primaryField.id)}
-                                    </Text>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
-                )}
-                
-                {/* Activities */}
-                {selectedObjectiveIds.length > 0 && filteredActivities.length > 0 && (
-                    <Box marginBottom={3}>
-                        <Label>Activities ({selectedActivityIds.length} selected)</Label>
-                        <Box 
-                            border="default"
-                            borderRadius="default"
-                            padding={2}
-                            maxHeight="200px"
-                            overflow="auto"
-                            backgroundColor="lightGray1"
-                        >
-                            {filteredActivities.map(activity => (
-                                <Box 
-                                    key={activity.id}
-                                    display="flex"
-                                    alignItems="center"
-                                    paddingY={1}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedActivityIds.includes(activity.id)}
-                                        onChange={() => handleActivityToggle(activity.id)}
-                                        style={{marginRight: '8px'}}
-                                    />
-                                    <Text>
-                                        {activity.name || activity.getCellValueAsString(activitiesTable.primaryField.id)}
-                                    </Text>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
-                )}
-            </Box>
-            
+
             {/* Summary */}
             <Box 
                 backgroundColor="blueBright" 
@@ -369,6 +574,7 @@ function ReportSelectorApp() {
                 >
                     Generate Report
                 </Button>
+            </Box>
             </Box>
         </Box>
     );
