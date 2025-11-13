@@ -5,40 +5,46 @@ This document explains the JSON structure that gets generated when you trigger a
 
 ## JSON Structure
 
-The `buildHierarchicalRecordList()` function generates a JSON array with the following structure:
+The `buildHierarchicalRecordList()` function generates a nested JSON object with the following structure:
 
 ```json
-[
-  {
-    "tableId": "tbl72KzV8O1LBmUXj",
-    "recordId": "rec123xyz",
-    "recordName": "Workplan Source Name",
-    "hierarchyLevel": 1,
-    "ttaSessions": [
-      {
-        "id": "recTTA001",
-        "summary": "T/TA session summary text"
-      },
-      {
-        "id": "recTTA002",
-        "summary": "Another T/TA session summary"
-      }
-    ]
-  },
-  {
-    "tableId": "tbllMymEmuGkCucVM",
-    "recordId": "rec456abc",
-    "recordName": "Goal Name",
-    "hierarchyLevel": 2,
-    "ttaSessions": [
-      {
-        "id": "recTTA003",
-        "summary": "Goal-related T/TA session"
-      }
-    ]
-  },
-  // ... more records at different hierarchy levels
-]
+{
+  "tableId": "tbl72KzV8O1LBmUXj",
+  "recordId": "rec123xyz",
+  "recordName": "Workplan Source Name",
+  "ttaSessions": [
+    {
+      "id": "recTTA001",
+      "summary": "T/TA session summary text"
+    },
+    {
+      "id": "recTTA002",
+      "summary": "Another T/TA session summary"
+    }
+  ],
+  "children": [
+    {
+      "tableId": "tbllMymEmuGkCucVM",
+      "recordId": "rec456abc",
+      "recordName": "Goal Name",
+      "ttaSessions": [
+        {
+          "id": "recTTA003",
+          "summary": "Goal-related T/TA session"
+        }
+      ],
+      "children": [
+        {
+          "tableId": "tbl9wK640Z5ZY7e7U",
+          "recordId": "recObj001",
+          "recordName": "Objective Name",
+          "ttaSessions": [],
+          "children": []
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ## Key Fields
@@ -46,15 +52,13 @@ The `buildHierarchicalRecordList()` function generates a JSON array with the fol
 - **tableId**: The Airtable table ID for this record type
 - **recordId**: The unique record ID in Airtable
 - **recordName**: The human-readable name of the record (primary field)
-- **hierarchyLevel**:
-  - 1 = top-level (workplan source, goal, objective, or activity depending on selection)
-  - 2 = second level (goal, objective, or activity)
-  - 3 = third level (objective or activity)
-  - 4 = fourth level (activity)
 - **ttaSessions**: Array of T/TA sessions linked to this record, filtered by:
   - Date range overlap (session date within report date range)
   - Record linkage (session is linked to this record)
   - Sorted chronologically by date (earliest first)
+- **children**: Array of nested records at the next level of the hierarchy
+  - Empty array if this is the bottom level or no child records exist
+  - Each child has the same structure (tableId, recordId, recordName, ttaSessions, children)
 
 ## Table ID Reference
 
@@ -94,10 +98,11 @@ After clicking "Generate Report":
 ### Step 3: Verify the JSON Structure
 Check that your JSON output:
 - ✓ Is valid JSON (no syntax errors)
-- ✓ Contains records only at valid hierarchy levels (1-4)
-- ✓ Has correct tableIds for each record type
-- ✓ Includes valid recordIds from your base
-- ✓ Has correct hierarchy levels based on the selections
+- ✓ Is a single nested object, not an array
+- ✓ Has root object with tableId, recordId, recordName, ttaSessions, and children
+- ✓ Has correct tableId for the root record type
+- ✓ Includes valid recordId from your base
+- ✓ Correctly nested children based on the selections (no children at bottom level)
 - ✓ T/TA sessions are sorted by date (chronologically)
 - ✓ T/TA sessions only include those within the date range
 - ✓ Activities are only included if they overlap the date range
@@ -111,55 +116,56 @@ If you select:
 
 You might get:
 ```json
-[
-  {
-    "tableId": "tbl72KzV8O1LBmUXj",
-    "recordId": "recWPS001",
-    "recordName": "Tech Improvement Initiative",
-    "hierarchyLevel": 1,
-    "ttaSessions": [
-      {
-        "id": "recTTA001",
-        "summary": "Kickoff meeting to discuss tech roadmap"
-      }
-    ]
-  },
-  {
-    "tableId": "tbllMymEmuGkCucVM",
-    "recordId": "recGoal001",
-    "recordName": "Improve System Performance",
-    "hierarchyLevel": 2,
-    "ttaSessions": [
-      {
-        "id": "recTTA002",
-        "summary": "Q1 performance optimization discussion"
-      },
-      {
-        "id": "recTTA003",
-        "summary": "Implementation review"
-      }
-    ]
-  },
-  {
-    "tableId": "tbl9wK640Z5ZY7e7U",
-    "recordId": "recObj001",
-    "recordName": "Optimize Database Queries",
-    "hierarchyLevel": 3,
-    "ttaSessions": []
-  },
-  {
-    "tableId": "tblzBApG5kIfiN9Bs",
-    "recordId": "recAct001",
-    "recordName": "Review and Profile Slow Queries",
-    "hierarchyLevel": 4,
-    "ttaSessions": [
-      {
-        "id": "recTTA004",
-        "summary": "Query profiling workshop"
-      }
-    ]
-  }
-]
+{
+  "tableId": "tbl72KzV8O1LBmUXj",
+  "recordId": "recWPS001",
+  "recordName": "Tech Improvement Initiative",
+  "ttaSessions": [
+    {
+      "id": "recTTA001",
+      "summary": "Kickoff meeting to discuss tech roadmap"
+    }
+  ],
+  "children": [
+    {
+      "tableId": "tbllMymEmuGkCucVM",
+      "recordId": "recGoal001",
+      "recordName": "Improve System Performance",
+      "ttaSessions": [
+        {
+          "id": "recTTA002",
+          "summary": "Q1 performance optimization discussion"
+        },
+        {
+          "id": "recTTA003",
+          "summary": "Implementation review"
+        }
+      ],
+      "children": [
+        {
+          "tableId": "tbl9wK640Z5ZY7e7U",
+          "recordId": "recObj001",
+          "recordName": "Optimize Database Queries",
+          "ttaSessions": [],
+          "children": [
+            {
+              "tableId": "tblzBApG5kIfiN9Bs",
+              "recordId": "recAct001",
+              "recordName": "Review and Profile Slow Queries",
+              "ttaSessions": [
+                {
+                  "id": "recTTA004",
+                  "summary": "Query profiling workshop"
+                }
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ## Using JSON in the Automation
@@ -169,10 +175,13 @@ When the "Generate Report" button is clicked:
 2. The JSON is also sent to the Report Requests table as the "Hierarchical Records" field
 3. The Airtable automation will:
    - Read this JSON from the "Hierarchical Records" field
-   - Parse each record in the array
-   - Fetch relevant T/TA data (already included in the JSON)
-   - Generate AI summaries using the ttaSessions data
-   - Format output with markdown based on hierarchyLevel (# ## ### ####)
+   - Parse the nested structure recursively
+   - For each record in the hierarchy, use the included T/TA sessions data to generate summaries
+   - Format output with markdown based on nesting depth:
+     - Root level: `#`
+     - First children level: `##`
+     - Second children level: `###`
+     - Third children level: `####`
    - Update the "Generated Report" field with the final formatted report
 
 ## Date Filtering Details

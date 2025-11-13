@@ -64,8 +64,33 @@ const getTTASessionsForRecord = (recordId, ttaSessions, ttaLinkField, startDate,
 };
 
 /**
- * Builds a hierarchical record list for report generation
- * Returns an array of {tableId, recordId, recordName, hierarchyLevel, ttaSessions} objects
+ * Helper function to create a record object
+ */
+const createRecordObject = (record, table, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
+    const ttaForRecord = getTTASessionsForRecord(record.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
+    const ttaData = ttaForRecord
+        .sort((a, b) => {
+            const dateA = a.getCellValue(ttaDateField?.id);
+            const dateB = b.getCellValue(ttaDateField?.id);
+            return new Date(dateA) - new Date(dateB);
+        })
+        .map(session => ({
+            id: session.id,
+            summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
+        }));
+
+    return {
+        tableId: table.id,
+        recordId: record.id,
+        recordName: getRecordName(record, table),
+        ttaSessions: ttaData,
+        children: []
+    };
+};
+
+/**
+ * Builds a hierarchical record structure for report generation (nested)
+ * Returns a nested object with structure: { record info, children: [ nested records ] }
  */
 export const buildHierarchicalRecordList = (
     topLevel,
@@ -92,91 +117,32 @@ export const buildHierarchicalRecordList = (
     ttaSummaryForAIFieldId,
     ttaDateField
 ) => {
-    const records = [];
-
     switch (topLevel) {
         case 'workplanSource': {
             const topRecord = workplanSources.find(ws => ws.id === topLevelId);
-            if (!topRecord) return records;
+            if (!topRecord) return null;
 
-            const ttaForRecord = getTTASessionsForRecord(topLevelId, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-            const ttaData = ttaForRecord
-                .sort((a, b) => {
-                    const dateA = a.getCellValue(ttaDateField?.id);
-                    const dateB = b.getCellValue(ttaDateField?.id);
-                    return new Date(dateA) - new Date(dateB);
-                })
-                .map(session => ({
-                    id: session.id,
-                    summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                }));
-
-            records.push({
-                tableId: workplanSourcesTable.id,
-                recordId: topLevelId,
-                recordName: getRecordName(topRecord, workplanSourcesTable),
-                hierarchyLevel: 1,
-                ttaSessions: ttaData
-            });
+            const root = createRecordObject(topRecord, workplanSourcesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
 
             if (bottomLevel === 'goal' || bottomLevel === 'objective' || bottomLevel === 'activity') {
-                // Get goals linked to this workplan source
                 const linkedGoals = goals.filter(goal => {
                     const linked = goal.getCellValue(goalsLinkField?.id);
                     return linked && linked.some(l => l.id === topLevelId);
                 });
 
                 for (const goal of linkedGoals) {
-                    const ttaForGoal = getTTASessionsForRecord(goal.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-                    const goalTTAData = ttaForGoal
-                        .sort((a, b) => {
-                            const dateA = a.getCellValue(ttaDateField?.id);
-                            const dateB = b.getCellValue(ttaDateField?.id);
-                            return new Date(dateA) - new Date(dateB);
-                        })
-                        .map(session => ({
-                            id: session.id,
-                            summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                        }));
-
-                    records.push({
-                        tableId: goalsTable.id,
-                        recordId: goal.id,
-                        recordName: getRecordName(goal, goalsTable),
-                        hierarchyLevel: 2,
-                        ttaSessions: goalTTAData
-                    });
+                    const goalObj = createRecordObject(goal, goalsTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
 
                     if (bottomLevel === 'objective' || bottomLevel === 'activity') {
-                        // Get objectives linked to this goal
                         const linkedObjectives = objectives.filter(obj => {
                             const linked = obj.getCellValue(objectivesLinkField?.id);
                             return linked && linked.some(l => l.id === goal.id);
                         });
 
                         for (const objective of linkedObjectives) {
-                            const ttaForObjective = getTTASessionsForRecord(objective.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-                            const objTTAData = ttaForObjective
-                                .sort((a, b) => {
-                                    const dateA = a.getCellValue(ttaDateField?.id);
-                                    const dateB = b.getCellValue(ttaDateField?.id);
-                                    return new Date(dateA) - new Date(dateB);
-                                })
-                                .map(session => ({
-                                    id: session.id,
-                                    summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                                }));
-
-                            records.push({
-                                tableId: objectivesTable.id,
-                                recordId: objective.id,
-                                recordName: getRecordName(objective, objectivesTable),
-                                hierarchyLevel: 3,
-                                ttaSessions: objTTAData
-                            });
+                            const objObj = createRecordObject(objective, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
 
                             if (bottomLevel === 'activity') {
-                                // Get activities linked to this objective, filtered by date range
                                 const linkedActivities = activities.filter(activity => {
                                     const linked = activity.getCellValue(activitiesLinkField?.id);
                                     return linked && linked.some(l => l.id === objective.id) &&
@@ -184,82 +150,38 @@ export const buildHierarchicalRecordList = (
                                 });
 
                                 for (const activity of linkedActivities) {
-                                    const ttaForActivity = getTTASessionsForRecord(activity.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-                                    const actTTAData = ttaForActivity
-                                        .sort((a, b) => {
-                                            const dateA = a.getCellValue(ttaDateField?.id);
-                                            const dateB = b.getCellValue(ttaDateField?.id);
-                                            return new Date(dateA) - new Date(dateB);
-                                        })
-                                        .map(session => ({
-                                            id: session.id,
-                                            summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                                        }));
-
-                                    records.push({
-                                        tableId: activitiesTable.id,
-                                        recordId: activity.id,
-                                        recordName: getRecordName(activity, activitiesTable),
-                                        hierarchyLevel: 4,
-                                        ttaSessions: actTTAData
-                                    });
+                                    const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                                    objObj.children.push(actObj);
                                 }
                             }
+
+                            goalObj.children.push(objObj);
                         }
                     }
+
+                    root.children.push(goalObj);
                 }
             }
-            break;
+
+            return root;
         }
 
         case 'goal': {
             const topRecord = goals.find(g => g.id === topLevelId);
-            if (!topRecord) return records;
+            if (!topRecord) return null;
 
-            const ttaForRecord = getTTASessionsForRecord(topLevelId, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-            const ttaData = ttaForRecord
-                .sort((a, b) => {
-                    const dateA = a.getCellValue(ttaDateField?.id);
-                    const dateB = b.getCellValue(ttaDateField?.id);
-                    return new Date(dateA) - new Date(dateB);
-                })
-                .map(session => ({
-                    id: session.id,
-                    summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                }));
-
-            records.push({
-                tableId: goalsTable.id,
-                recordId: topLevelId,
-                recordName: getRecordName(topRecord, goalsTable),
-                hierarchyLevel: 1,
-                ttaSessions: ttaData
-            });
+            const root = createRecordObject(topRecord, goalsTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
 
             if (bottomLevel === 'objective' || bottomLevel === 'activity') {
-                // Get objectives linked to this goal
                 const linkedObjectives = objectives.filter(obj => {
                     const linked = obj.getCellValue(objectivesLinkField?.id);
                     return linked && linked.some(l => l.id === topLevelId);
                 });
 
                 for (const objective of linkedObjectives) {
-                    const ttaForObjective = getTTASessionsForRecord(objective.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-                    const objTTAData = ttaForObjective.map(session => ({
-                        id: session.id,
-                        summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                    }));
-
-                    records.push({
-                        tableId: objectivesTable.id,
-                        recordId: objective.id,
-                        recordName: getRecordName(objective, objectivesTable),
-                        hierarchyLevel: 2,
-                        ttaSessions: objTTAData
-                    });
+                    const objObj = createRecordObject(objective, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
 
                     if (bottomLevel === 'activity') {
-                        // Get activities linked to this objective, filtered by date range
                         const linkedActivities = activities.filter(activity => {
                             const linked = activity.getCellValue(activitiesLinkField?.id);
                             return linked && linked.some(l => l.id === objective.id) &&
@@ -267,52 +189,25 @@ export const buildHierarchicalRecordList = (
                         });
 
                         for (const activity of linkedActivities) {
-                            const ttaForActivity = getTTASessionsForRecord(activity.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-                            const actTTAData = ttaForActivity.map(session => ({
-                                id: session.id,
-                                summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                            }));
-
-                            records.push({
-                                tableId: activitiesTable.id,
-                                recordId: activity.id,
-                                recordName: getRecordName(activity, activitiesTable),
-                                hierarchyLevel: 3,
-                                ttaSessions: actTTAData
-                            });
+                            const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                            objObj.children.push(actObj);
                         }
                     }
+
+                    root.children.push(objObj);
                 }
             }
-            break;
+
+            return root;
         }
 
         case 'objective': {
             const topRecord = objectives.find(o => o.id === topLevelId);
-            if (!topRecord) return records;
+            if (!topRecord) return null;
 
-            const ttaForRecord = getTTASessionsForRecord(topLevelId, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-            const ttaData = ttaForRecord
-                .sort((a, b) => {
-                    const dateA = a.getCellValue(ttaDateField?.id);
-                    const dateB = b.getCellValue(ttaDateField?.id);
-                    return new Date(dateA) - new Date(dateB);
-                })
-                .map(session => ({
-                    id: session.id,
-                    summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                }));
-
-            records.push({
-                tableId: objectivesTable.id,
-                recordId: topLevelId,
-                recordName: getRecordName(topRecord, objectivesTable),
-                hierarchyLevel: 1,
-                ttaSessions: ttaData
-            });
+            const root = createRecordObject(topRecord, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
 
             if (bottomLevel === 'activity') {
-                // Get activities linked to this objective, filtered by date range
                 const linkedActivities = activities.filter(activity => {
                     const linked = activity.getCellValue(activitiesLinkField?.id);
                     return linked && linked.some(l => l.id === topLevelId) &&
@@ -320,50 +215,27 @@ export const buildHierarchicalRecordList = (
                 });
 
                 for (const activity of linkedActivities) {
-                    const ttaForActivity = getTTASessionsForRecord(activity.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-                    const actTTAData = ttaForActivity.map(session => ({
-                        id: session.id,
-                        summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                    }));
-
-                    records.push({
-                        tableId: activitiesTable.id,
-                        recordId: activity.id,
-                        recordName: getRecordName(activity, activitiesTable),
-                        hierarchyLevel: 2,
-                        ttaSessions: actTTAData
-                    });
+                    const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    root.children.push(actObj);
                 }
             }
-            break;
+
+            return root;
         }
 
         case 'activity': {
             const topRecord = activities.find(a => a.id === topLevelId);
-            if (!topRecord) return records;
+            if (!topRecord) return null;
 
             // Only include activity if it overlaps with date range
             if (isActivityInDateRange(topRecord, startDate, endDate, activitiesStartDateField, activitiesEndDateField)) {
-                const ttaForActivity = getTTASessionsForRecord(topLevelId, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
-                const actTTAData = ttaForActivity.map(session => ({
-                    id: session.id,
-                    summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
-                }));
-
-                records.push({
-                    tableId: activitiesTable.id,
-                    recordId: topLevelId,
-                    recordName: getRecordName(topRecord, activitiesTable),
-                    hierarchyLevel: 1,
-                    ttaSessions: actTTAData
-                });
+                return createRecordObject(topRecord, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
             }
-            break;
+
+            return null;
         }
 
         default:
-            break;
+            return null;
     }
-
-    return records;
 };

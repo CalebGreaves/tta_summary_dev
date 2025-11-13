@@ -61365,6 +61365,160 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     }
   });
 
+  // frontend/buildHierarchy.js
+  var getRecordName, isActivityInDateRange, getTTASessionsForRecord, createRecordObject, buildHierarchicalRecordList;
+  var init_buildHierarchy = __esm({
+    "frontend/buildHierarchy.js"() {
+      getRecordName = (record, table) => {
+        return record.name || record.getCellValueAsString(table.primaryField.id) || "Unknown";
+      };
+      isActivityInDateRange = (activity, startDate, endDate, startDateField, endDateField) => {
+        if (!startDate && !endDate) {
+          return true;
+        }
+        const activityStart = activity.getCellValue(startDateField?.id);
+        const activityEnd = activity.getCellValue(endDateField?.id);
+        if (!activityStart || !activityEnd) {
+          return false;
+        }
+        const userStart = startDate ? new Date(startDate) : null;
+        const userEnd = endDate ? new Date(endDate) : null;
+        const actStart = new Date(activityStart);
+        const actEnd = new Date(activityEnd);
+        if (userStart && actEnd < userStart) return false;
+        if (userEnd && actStart > userEnd) return false;
+        return true;
+      };
+      getTTASessionsForRecord = (recordId, ttaSessions, ttaLinkField, startDate, endDate, ttaDateField) => {
+        if (!ttaLinkField) return [];
+        const linkedTTA = ttaSessions.filter((session) => {
+          const linked = session.getCellValue(ttaLinkField?.id);
+          if (!linked || !linked.some((l) => l.id === recordId)) return false;
+          if (!startDate && !endDate) return true;
+          const sessionDate = session.getCellValue(ttaDateField?.id);
+          if (!sessionDate) return false;
+          const date = new Date(sessionDate);
+          const userStart = startDate ? new Date(startDate) : null;
+          const userEnd = endDate ? new Date(endDate) : null;
+          if (userStart && date < userStart) return false;
+          if (userEnd && date > userEnd) return false;
+          return true;
+        });
+        return linkedTTA;
+      };
+      createRecordObject = (record, table, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
+        const ttaForRecord = getTTASessionsForRecord(record.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
+        const ttaData = ttaForRecord.sort((a, b) => {
+          const dateA = a.getCellValue(ttaDateField?.id);
+          const dateB = b.getCellValue(ttaDateField?.id);
+          return new Date(dateA) - new Date(dateB);
+        }).map((session) => ({
+          id: session.id,
+          summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ""
+        }));
+        return {
+          tableId: table.id,
+          recordId: record.id,
+          recordName: getRecordName(record, table),
+          ttaSessions: ttaData,
+          children: []
+        };
+      };
+      buildHierarchicalRecordList = (topLevel, topLevelId, bottomLevel, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable, workplanSources, goals, objectives, activities, goalsLinkField, objectivesLinkField, objectivesToSourcesLinkField, activitiesLinkField, startDate, endDate, activitiesStartDateField, activitiesEndDateField, ttaSessions, ttaSessionsLinkField, ttaSummaryForAIFieldId, ttaDateField) => {
+        switch (topLevel) {
+          case "workplanSource": {
+            const topRecord = workplanSources.find((ws) => ws.id === topLevelId);
+            if (!topRecord) return null;
+            const root = createRecordObject(topRecord, workplanSourcesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+            if (bottomLevel === "goal" || bottomLevel === "objective" || bottomLevel === "activity") {
+              const linkedGoals = goals.filter((goal) => {
+                const linked = goal.getCellValue(goalsLinkField?.id);
+                return linked && linked.some((l) => l.id === topLevelId);
+              });
+              for (const goal of linkedGoals) {
+                const goalObj = createRecordObject(goal, goalsTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                if (bottomLevel === "objective" || bottomLevel === "activity") {
+                  const linkedObjectives = objectives.filter((obj) => {
+                    const linked = obj.getCellValue(objectivesLinkField?.id);
+                    return linked && linked.some((l) => l.id === goal.id);
+                  });
+                  for (const objective of linkedObjectives) {
+                    const objObj = createRecordObject(objective, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    if (bottomLevel === "activity") {
+                      const linkedActivities = activities.filter((activity) => {
+                        const linked = activity.getCellValue(activitiesLinkField?.id);
+                        return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
+                      });
+                      for (const activity of linkedActivities) {
+                        const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                        objObj.children.push(actObj);
+                      }
+                    }
+                    goalObj.children.push(objObj);
+                  }
+                }
+                root.children.push(goalObj);
+              }
+            }
+            return root;
+          }
+          case "goal": {
+            const topRecord = goals.find((g) => g.id === topLevelId);
+            if (!topRecord) return null;
+            const root = createRecordObject(topRecord, goalsTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+            if (bottomLevel === "objective" || bottomLevel === "activity") {
+              const linkedObjectives = objectives.filter((obj) => {
+                const linked = obj.getCellValue(objectivesLinkField?.id);
+                return linked && linked.some((l) => l.id === topLevelId);
+              });
+              for (const objective of linkedObjectives) {
+                const objObj = createRecordObject(objective, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                if (bottomLevel === "activity") {
+                  const linkedActivities = activities.filter((activity) => {
+                    const linked = activity.getCellValue(activitiesLinkField?.id);
+                    return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
+                  });
+                  for (const activity of linkedActivities) {
+                    const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    objObj.children.push(actObj);
+                  }
+                }
+                root.children.push(objObj);
+              }
+            }
+            return root;
+          }
+          case "objective": {
+            const topRecord = objectives.find((o) => o.id === topLevelId);
+            if (!topRecord) return null;
+            const root = createRecordObject(topRecord, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+            if (bottomLevel === "activity") {
+              const linkedActivities = activities.filter((activity) => {
+                const linked = activity.getCellValue(activitiesLinkField?.id);
+                return linked && linked.some((l) => l.id === topLevelId) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
+              });
+              for (const activity of linkedActivities) {
+                const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                root.children.push(actObj);
+              }
+            }
+            return root;
+          }
+          case "activity": {
+            const topRecord = activities.find((a) => a.id === topLevelId);
+            if (!topRecord) return null;
+            if (isActivityInDateRange(topRecord, startDate, endDate, activitiesStartDateField, activitiesEndDateField)) {
+              return createRecordObject(topRecord, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+            }
+            return null;
+          }
+          default:
+            return null;
+        }
+      };
+    }
+  });
+
   // node_modules/react/cjs/react-jsx-dev-runtime.development.js
   var require_react_jsx_dev_runtime_development = __commonJS({
     "node_modules/react/cjs/react-jsx-dev-runtime.development.js"(exports) {
@@ -61988,6 +62142,10 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     const [topLevelSearchTerm, setTopLevelSearchTerm] = (0, import_react.useState)("");
     const [topLevelDropdownOpen, setTopLevelDropdownOpen] = (0, import_react.useState)(false);
     const [bottomLevel, setBottomLevel] = (0, import_react.useState)("");
+    const [reportRequestId, setReportRequestId] = (0, import_react.useState)("");
+    const [isGenerating, setIsGenerating] = (0, import_react.useState)(false);
+    const [generatedReport, setGeneratedReport] = (0, import_react.useState)("");
+    const [debugJsonOutput, setDebugJsonOutput] = (0, import_react.useState)("");
     const dropdownRef = (0, import_react.useRef)(null);
     (0, import_react.useEffect)(() => {
       const handleClickOutside = (event) => {
@@ -62196,64 +62354,151 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         return { value: record.id, label, score };
       }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
     }, [topLevel, topLevelSearchTerm, workplanSources, goals, objectives, activities, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable]);
+    const REPORT_REQUESTS_TABLE_ID = "tblnw1RnPcRcrqtbh";
+    const handleGenerateReport = async () => {
+      try {
+        setIsGenerating(true);
+        const hierarchicalRecords = buildHierarchicalRecordList(
+          topLevel,
+          topLevelId,
+          bottomLevel,
+          workplanSourcesTable,
+          goalsTable,
+          objectivesTable,
+          activitiesTable,
+          workplanSources,
+          goals,
+          objectives,
+          activities,
+          goalsLinkField,
+          objectivesLinkField,
+          objectivesToSourcesLinkField,
+          activitiesLinkField,
+          startDate,
+          endDate,
+          activitiesStartDateField,
+          activitiesEndDateField,
+          ttaSessions,
+          ttaSessionsLinkField,
+          "fldJYcVHEF4jadCdh",
+          // T/TA Summary for AI field ID
+          ttaSessionsDateField
+        );
+        const jsonOutput = JSON.stringify(hierarchicalRecords, null, 2);
+        console.log("Hierarchical Records JSON:", jsonOutput);
+        setDebugJsonOutput(jsonOutput);
+        const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
+        if (!reportRequestsTable) {
+          alert("Report Requests table not found. Please check the table ID.");
+          setIsGenerating(false);
+          return;
+        }
+        const newRecord = await reportRequestsTable.createRecordsAsync([
+          {
+            fields: {
+              "Hierarchical Records": JSON.stringify(hierarchicalRecords),
+              "Start Date": startDate,
+              "End Date": endDate,
+              "Status": { name: "New" }
+            }
+          }
+        ]);
+        if (newRecord && newRecord.length > 0) {
+          setReportRequestId(newRecord[0]);
+          pollForCompletion(newRecord[0]);
+        }
+      } catch (error) {
+        console.error("Error creating report request:", error);
+        alert("Error creating report request: " + error.message);
+        setIsGenerating(false);
+      }
+    };
+    const pollForCompletion = (recordId) => {
+      const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
+      const pollInterval = setInterval(async () => {
+        try {
+          const record = await reportRequestsTable.selectRecordsAsync();
+          const reportRecord = record.records.find((r) => r.id === recordId);
+          if (reportRecord) {
+            const status = reportRecord.getCellValueAsString("Status");
+            const report = reportRecord.getCellValueAsString("Generated Report");
+            if (status === "Ready" && report) {
+              setGeneratedReport(report);
+              setIsGenerating(false);
+              clearInterval(pollInterval);
+            } else if (status === "Error") {
+              const error = reportRecord.getCellValueAsString("Error Message");
+              alert("Report generation failed: " + error);
+              setIsGenerating(false);
+              clearInterval(pollInterval);
+            }
+          }
+        } catch (error) {
+          console.error("Error polling for completion:", error);
+          setIsGenerating(false);
+          clearInterval(pollInterval);
+        }
+      }, 2e3);
+      setTimeout(() => clearInterval(pollInterval), 3e5);
+    };
     if (!workplanSourcesTable || !goalsTable || !objectivesTable || !activitiesTable || !ttaSessionsTable) {
       return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 3, backgroundColor: "lightGray1", children: [
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "large", children: "Configuration Needed" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 351,
+          lineNumber: 465,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 2, children: "Please ensure your base has these tables with these exact names:" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 352,
+          lineNumber: 466,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginTop: 2, children: [
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Workplan Sources" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 356,
+            lineNumber: 470,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Goals" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 357,
+            lineNumber: 471,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Objectives" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 358,
+            lineNumber: 472,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Activities" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 359,
+            lineNumber: 473,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 T/TA Sessions" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 360,
+            lineNumber: 474,
             columnNumber: 21
           }, this)
         ] }, void 0, true, {
           fileName: "frontend/index.js",
-          lineNumber: 355,
+          lineNumber: 469,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 2, textColor: "light", children: "(Or update the table names in the code)" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 362,
+          lineNumber: 476,
           columnNumber: 17
         }, this)
       ] }, void 0, true, {
         fileName: "frontend/index.js",
-        lineNumber: 350,
+        lineNumber: 464,
         columnNumber: 13
       }, this);
     }
     return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 3, backgroundColor: "lightGray1", minHeight: "100vh", display: "flex", justifyContent: "center", children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { maxWidth: "800px", width: "100%", children: [
       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "xlarge", marginBottom: 3, children: "Work Report Selector" }, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 372,
+        lineNumber: 486,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62268,13 +62513,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 3, children: "What should the report cover?" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 383,
+              lineNumber: 497,
               columnNumber: 17
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Generate a report about:" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 387,
+                lineNumber: 501,
                 columnNumber: 21
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", children: [
@@ -62298,7 +62543,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 396,
+                    lineNumber: 510,
                     columnNumber: 33
                   },
                   this
@@ -62314,23 +62559,23 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 405,
+                    lineNumber: 519,
                     columnNumber: 33
                   },
                   this
                 )
               ] }, option.value, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 395,
+                lineNumber: 509,
                 columnNumber: 29
               }, this)) }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 388,
+                lineNumber: 502,
                 columnNumber: 21
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 386,
+              lineNumber: 500,
               columnNumber: 17
             }, this),
             topLevel && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "row", gap: 3, marginBottom: 3, alignItems: "flex-end", children: [
@@ -62348,12 +62593,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                     children: [
                       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: topLevelId ? filteredTopLevelOptions.find((opt) => opt.value === topLevelId)?.label || "Unknown" : `Select ${getReadableLabel(topLevel)}...` }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 431,
+                        lineNumber: 545,
                         columnNumber: 33
                       }, this),
                       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Icon, { name: "caret", size: 16 }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 436,
+                        lineNumber: 550,
                         columnNumber: 33
                       }, this)
                     ]
@@ -62362,7 +62607,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   true,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 422,
+                    lineNumber: 536,
                     columnNumber: 29
                   },
                   this
@@ -62394,13 +62639,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                         false,
                         {
                           fileName: "frontend/index.js",
-                          lineNumber: 454,
+                          lineNumber: 568,
                           columnNumber: 41
                         },
                         this
                       ) }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 453,
+                        lineNumber: 567,
                         columnNumber: 37
                       }, this),
                       filteredTopLevelOptions.length > 0 ? filteredTopLevelOptions.map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62424,7 +62669,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                           },
                           children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: option.label }, void 0, false, {
                             fileName: "frontend/index.js",
-                            lineNumber: 486,
+                            lineNumber: 600,
                             columnNumber: 49
                           }, this)
                         },
@@ -62432,13 +62677,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                         false,
                         {
                           fileName: "frontend/index.js",
-                          lineNumber: 467,
+                          lineNumber: 581,
                           columnNumber: 45
                         },
                         this
                       )) : /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 2, textColor: "light", children: "No matches found" }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 490,
+                        lineNumber: 604,
                         columnNumber: 41
                       }, this)
                     ]
@@ -62447,20 +62692,20 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   true,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 441,
+                    lineNumber: 555,
                     columnNumber: 33
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 420,
+                lineNumber: 534,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", marginRight: "16px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { htmlFor: "startDate", children: "Start Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 500,
+                  lineNumber: 614,
                   columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62476,20 +62721,20 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 501,
+                    lineNumber: 615,
                     columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 499,
+                lineNumber: 613,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { htmlFor: "endDate", children: "End Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 512,
+                  lineNumber: 626,
                   columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62505,25 +62750,25 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 513,
+                    lineNumber: 627,
                     columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 511,
+                lineNumber: 625,
                 columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 418,
+              lineNumber: 532,
               columnNumber: 21
             }, this),
             topLevel && topLevelId && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Show detail down to:" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 527,
+                lineNumber: 641,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 2, children: getBottomLevelOptions().map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", alignItems: "center", gap: 2, marginY: 2, children: [
@@ -62542,7 +62787,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 531,
+                    lineNumber: 645,
                     columnNumber: 37
                   },
                   this
@@ -62558,23 +62803,23 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 540,
+                    lineNumber: 654,
                     columnNumber: 37
                   },
                   this
                 )
               ] }, option.value, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 530,
+                lineNumber: 644,
                 columnNumber: 33
               }, this)) }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 528,
+                lineNumber: 642,
                 columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 526,
+              lineNumber: 640,
               columnNumber: 21
             }, this)
           ]
@@ -62583,12 +62828,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 375,
+          lineNumber: 489,
           columnNumber: 17
         },
         this
       ),
-      /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+      !isGenerating && !generatedReport && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
         import_ui.Box,
         {
           backgroundColor: "blueBright",
@@ -62598,20 +62843,20 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 1, children: "Summary" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 560,
-              columnNumber: 17
+              lineNumber: 675,
+              columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "large", children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("strong", { children: filteredSessions.length }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 562,
-                columnNumber: 21
+                lineNumber: 677,
+                columnNumber: 25
               }, this),
               " T/TA Sessions match your selection"
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 561,
-              columnNumber: 17
+              lineNumber: 676,
+              columnNumber: 21
             }, this),
             startDate && endDate && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 1, textColor: "light", children: [
               "Date range: ",
@@ -62620,8 +62865,8 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               new Date(endDate).toLocaleDateString()
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 565,
-              columnNumber: 21
+              lineNumber: 680,
+              columnNumber: 25
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
               import_ui.Button,
@@ -62629,15 +62874,16 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                 variant: "primary",
                 size: "large",
                 marginTop: 2,
-                disabled: filteredSessions.length === 0,
+                disabled: !topLevel || !topLevelId || !bottomLevel,
+                onClick: handleGenerateReport,
                 children: "Generate Report"
               },
               void 0,
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 569,
-                columnNumber: 17
+                lineNumber: 684,
+                columnNumber: 21
               },
               this
             )
@@ -62647,18 +62893,215 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 554,
-          columnNumber: 13
+          lineNumber: 669,
+          columnNumber: 17
+        },
+        this
+      ),
+      isGenerating && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+        import_ui.Box,
+        {
+          backgroundColor: "blueBright",
+          padding: 3,
+          borderRadius: "default",
+          border: "thick",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "200px",
+          children: [
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Generating Report..." }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 709,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginBottom: 2, textColor: "light", children: "This may take a moment while the AI summarizes your data." }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 710,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+              import_ui.Box,
+              {
+                style: {
+                  width: "40px",
+                  height: "40px",
+                  border: "4px solid rgba(0, 0, 0, 0.1)",
+                  borderTop: "4px solid #0084ff",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite"
+                }
+              },
+              void 0,
+              false,
+              {
+                fileName: "frontend/index.js",
+                lineNumber: 713,
+                columnNumber: 21
+              },
+              this
+            ),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("style", { children: `
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    ` }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 723,
+              columnNumber: 21
+            }, this)
+          ]
+        },
+        void 0,
+        true,
+        {
+          fileName: "frontend/index.js",
+          lineNumber: 698,
+          columnNumber: 17
+        },
+        this
+      ),
+      debugJsonOutput && !isGenerating && !generatedReport && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+        import_ui.Box,
+        {
+          backgroundColor: "lightGray2",
+          padding: 3,
+          borderRadius: "default",
+          border: "default",
+          marginBottom: 3,
+          style: { whiteSpace: "pre-wrap", fontFamily: "monospace", fontSize: "12px", maxHeight: "400px", overflow: "auto" },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Debug: Hierarchical Records JSON" }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 742,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", children: debugJsonOutput }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 743,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginTop: 2, children: [
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                import_ui.Button,
+                {
+                  variant: "secondary",
+                  size: "default",
+                  onClick: () => {
+                    navigator.clipboard.writeText(debugJsonOutput);
+                    alert("JSON copied to clipboard!");
+                  },
+                  children: "Copy JSON"
+                },
+                void 0,
+                false,
+                {
+                  fileName: "frontend/index.js",
+                  lineNumber: 745,
+                  columnNumber: 25
+                },
+                this
+              ),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+                import_ui.Button,
+                {
+                  variant: "secondary",
+                  size: "default",
+                  marginLeft: 2,
+                  onClick: () => {
+                    setDebugJsonOutput("");
+                    setGeneratedReport("");
+                    setReportRequestId("");
+                  },
+                  children: "Clear"
+                },
+                void 0,
+                false,
+                {
+                  fileName: "frontend/index.js",
+                  lineNumber: 755,
+                  columnNumber: 25
+                },
+                this
+              )
+            ] }, void 0, true, {
+              fileName: "frontend/index.js",
+              lineNumber: 744,
+              columnNumber: 21
+            }, this)
+          ]
+        },
+        void 0,
+        true,
+        {
+          fileName: "frontend/index.js",
+          lineNumber: 734,
+          columnNumber: 17
+        },
+        this
+      ),
+      generatedReport && !isGenerating && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+        import_ui.Box,
+        {
+          backgroundColor: "white",
+          padding: 3,
+          borderRadius: "default",
+          border: "thick",
+          marginBottom: 3,
+          style: { whiteSpace: "pre-wrap", fontFamily: "monospace" },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Generated Report" }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 781,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: generatedReport }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 782,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
+              import_ui.Button,
+              {
+                variant: "secondary",
+                size: "large",
+                marginTop: 3,
+                onClick: () => {
+                  setGeneratedReport("");
+                  setReportRequestId("");
+                  setDebugJsonOutput("");
+                },
+                children: "Generate Another Report"
+              },
+              void 0,
+              false,
+              {
+                fileName: "frontend/index.js",
+                lineNumber: 783,
+                columnNumber: 21
+              },
+              this
+            )
+          ]
+        },
+        void 0,
+        true,
+        {
+          fileName: "frontend/index.js",
+          lineNumber: 773,
+          columnNumber: 17
         },
         this
       )
     ] }, void 0, true, {
       fileName: "frontend/index.js",
-      lineNumber: 371,
+      lineNumber: 485,
       columnNumber: 13
     }, this) }, void 0, false, {
       fileName: "frontend/index.js",
-      lineNumber: 370,
+      lineNumber: 484,
       columnNumber: 9
     }, this);
   }
@@ -62667,6 +63110,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     "frontend/index.js"() {
       import_ui = __toESM(require_ui2());
       import_react = __toESM(require_react());
+      init_buildHierarchy();
       import_jsx_dev_runtime = __toESM(require_jsx_dev_runtime());
       getReadableLabel = (value) => {
         const labelMap = {
@@ -62696,7 +63140,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
       };
       (0, import_ui.initializeBlock)(() => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(ReportSelectorApp, {}, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 583,
+        lineNumber: 802,
         columnNumber: 23
       }));
     }
