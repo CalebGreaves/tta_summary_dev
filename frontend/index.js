@@ -11,6 +11,7 @@ import {
     Icon,
 } from '@airtable/blocks/ui';
 import React, {useState, useMemo, useEffect, useRef} from 'react';
+import { buildHierarchicalRecordList } from './buildHierarchy';
 
 // Convert camelCase or backend names to readable labels
 const getReadableLabel = (value) => {
@@ -66,6 +67,12 @@ function ReportSelectorApp() {
 
     // Bottom-level selection (the granularity of detail)
     const [bottomLevel, setBottomLevel] = useState(''); // depends on topLevel
+
+    // Report generation state
+    const [reportRequestId, setReportRequestId] = useState(''); // ID of the created report request
+    const [isGenerating, setIsGenerating] = useState(false); // loading state
+    const [generatedReport, setGeneratedReport] = useState(''); // the generated report content
+    const [debugJsonOutput, setDebugJsonOutput] = useState(''); // for debugging JSON output
 
     // Ref for dropdown to handle click-outside
     const dropdownRef = useRef(null);
@@ -344,6 +351,113 @@ function ReportSelectorApp() {
             .sort((a, b) => b.score - a.score);
     }, [topLevel, topLevelSearchTerm, workplanSources, goals, objectives, activities, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable]);
     
+    // Report Requests table ID
+    const REPORT_REQUESTS_TABLE_ID = 'tblnw1RnPcRcrqtbh';
+
+    // Handler to generate report
+    const handleGenerateReport = async () => {
+        try {
+            setIsGenerating(true);
+
+            // Build hierarchical record list
+            const hierarchicalRecords = buildHierarchicalRecordList(
+                topLevel,
+                topLevelId,
+                bottomLevel,
+                workplanSourcesTable,
+                goalsTable,
+                objectivesTable,
+                activitiesTable,
+                workplanSources,
+                goals,
+                objectives,
+                activities,
+                goalsLinkField,
+                objectivesLinkField,
+                objectivesToSourcesLinkField,
+                activitiesLinkField,
+                startDate,
+                endDate,
+                activitiesStartDateField,
+                activitiesEndDateField,
+                ttaSessions,
+                ttaSessionsLinkField,
+                'fldJYcVHEF4jadCdh', // T/TA Summary for AI field ID
+                ttaSessionsDateField
+            );
+
+            // Log and display JSON for debugging
+            const jsonOutput = JSON.stringify(hierarchicalRecords, null, 2);
+            console.log('Hierarchical Records JSON:', jsonOutput);
+            setDebugJsonOutput(jsonOutput);
+
+            // Get the Report Requests table by ID
+            const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
+
+            if (!reportRequestsTable) {
+                alert('Report Requests table not found. Please check the table ID.');
+                setIsGenerating(false);
+                return;
+            }
+
+            // Create the record with the hierarchical data
+            const newRecord = await reportRequestsTable.createRecordsAsync([
+                {
+                    fields: {
+                        'Hierarchical Records': JSON.stringify(hierarchicalRecords),
+                        'Start Date': startDate,
+                        'End Date': endDate,
+                        'Status': { name: 'New' }
+                    }
+                }
+            ]);
+
+            if (newRecord && newRecord.length > 0) {
+                setReportRequestId(newRecord[0]);
+                // Poll for completion
+                pollForCompletion(newRecord[0]);
+            }
+        } catch (error) {
+            console.error('Error creating report request:', error);
+            alert('Error creating report request: ' + error.message);
+            setIsGenerating(false);
+        }
+    };
+
+    // Poll for report completion
+    const pollForCompletion = (recordId) => {
+        const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
+        const pollInterval = setInterval(async () => {
+            try {
+                const record = await reportRequestsTable.selectRecordsAsync();
+                const reportRecord = record.records.find(r => r.id === recordId);
+
+                if (reportRecord) {
+                    const status = reportRecord.getCellValueAsString('Status');
+                    const report = reportRecord.getCellValueAsString('Generated Report');
+
+                    if (status === 'Ready' && report) {
+                        setGeneratedReport(report);
+                        setIsGenerating(false);
+                        clearInterval(pollInterval);
+                    } else if (status === 'Error') {
+                        const error = reportRecord.getCellValueAsString('Error Message');
+                        alert('Report generation failed: ' + error);
+                        setIsGenerating(false);
+                        clearInterval(pollInterval);
+                    }
+                }
+            } catch (error) {
+                console.error('Error polling for completion:', error);
+                setIsGenerating(false);
+                clearInterval(pollInterval);
+            }
+        }, 2000); // Poll every 2 seconds
+
+        // Stop polling after 5 minutes
+        setTimeout(() => clearInterval(pollInterval), 300000);
+    };
+
     // Check if tables exist
     if (!workplanSourcesTable || !goalsTable || !objectivesTable || !activitiesTable || !ttaSessionsTable) {
         return (
@@ -550,31 +664,136 @@ function ReportSelectorApp() {
                 )}
             </Box>
 
-            {/* Summary */}
-            <Box 
-                backgroundColor="blueBright" 
-                padding={3}
-                borderRadius="default"
-                border="thick"
-            >
-                <Heading size="small" marginBottom={1}>Summary</Heading>
-                <Text size="large">
-                    <strong>{filteredSessions.length}</strong> T/TA Sessions match your selection
-                </Text>
-                {startDate && endDate && (
-                    <Text marginTop={1} textColor="light">
-                        Date range: {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
-                    </Text>
-                )}
-                <Button
-                    variant="primary"
-                    size="large"
-                    marginTop={2}
-                    disabled={filteredSessions.length === 0}
+            {/* Summary and Report Section */}
+            {!isGenerating && !generatedReport && (
+                <Box
+                    backgroundColor="blueBright"
+                    padding={3}
+                    borderRadius="default"
+                    border="thick"
                 >
-                    Generate Report
-                </Button>
-            </Box>
+                    <Heading size="small" marginBottom={1}>Summary</Heading>
+                    <Text size="large">
+                        <strong>{filteredSessions.length}</strong> T/TA Sessions match your selection
+                    </Text>
+                    {startDate && endDate && (
+                        <Text marginTop={1} textColor="light">
+                            Date range: {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
+                        </Text>
+                    )}
+                    <Button
+                        variant="primary"
+                        size="large"
+                        marginTop={2}
+                        disabled={!topLevel || !topLevelId || !bottomLevel}
+                        onClick={handleGenerateReport}
+                    >
+                        Generate Report
+                    </Button>
+                </Box>
+            )}
+
+            {/* Loading State */}
+            {isGenerating && (
+                <Box
+                    backgroundColor="blueBright"
+                    padding={3}
+                    borderRadius="default"
+                    border="thick"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    justifyContent="center"
+                    minHeight="200px"
+                >
+                    <Heading size="small" marginBottom={2}>Generating Report...</Heading>
+                    <Text marginBottom={2} textColor="light">
+                        This may take a moment while the AI summarizes your data.
+                    </Text>
+                    <Box
+                        style={{
+                            width: '40px',
+                            height: '40px',
+                            border: '4px solid rgba(0, 0, 0, 0.1)',
+                            borderTop: '4px solid #0084ff',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                        }}
+                    />
+                    <style>{`
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    `}</style>
+                </Box>
+            )}
+
+            {/* Debug JSON Output */}
+            {debugJsonOutput && !isGenerating && !generatedReport && (
+                <Box
+                    backgroundColor="lightGray2"
+                    padding={3}
+                    borderRadius="default"
+                    border="default"
+                    marginBottom={3}
+                    style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '12px', maxHeight: '400px', overflow: 'auto' }}
+                >
+                    <Heading size="small" marginBottom={2}>Debug: Hierarchical Records JSON</Heading>
+                    <Text size="small">{debugJsonOutput}</Text>
+                    <Box marginTop={2}>
+                        <Button
+                            variant="secondary"
+                            size="default"
+                            onClick={() => {
+                                navigator.clipboard.writeText(debugJsonOutput);
+                                alert('JSON copied to clipboard!');
+                            }}
+                        >
+                            Copy JSON
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="default"
+                            marginLeft={2}
+                            onClick={() => {
+                                setDebugJsonOutput('');
+                                setGeneratedReport('');
+                                setReportRequestId('');
+                            }}
+                        >
+                            Clear
+                        </Button>
+                    </Box>
+                </Box>
+            )}
+
+            {/* Generated Report Display */}
+            {generatedReport && !isGenerating && (
+                <Box
+                    backgroundColor="white"
+                    padding={3}
+                    borderRadius="default"
+                    border="thick"
+                    marginBottom={3}
+                    style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}
+                >
+                    <Heading size="small" marginBottom={2}>Generated Report</Heading>
+                    <Text>{generatedReport}</Text>
+                    <Button
+                        variant="secondary"
+                        size="large"
+                        marginTop={3}
+                        onClick={() => {
+                            setGeneratedReport('');
+                            setReportRequestId('');
+                            setDebugJsonOutput('');
+                        }}
+                    >
+                        Generate Another Report
+                    </Button>
+                </Box>
+            )}
             </Box>
         </Box>
     );
