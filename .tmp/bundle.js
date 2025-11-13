@@ -61406,7 +61406,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         });
         return linkedTTA;
       };
-      createRecordObject = (record, table, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
+      createRecordObject = (record, table, recordType, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
         const ttaForRecord = getTTASessionsForRecord(record.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
         const ttaData = ttaForRecord.sort((a, b) => {
           const dateA = a.getCellValue(ttaDateField?.id);
@@ -61419,6 +61419,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         return {
           tableId: table.id,
           recordId: record.id,
+          type: recordType,
           recordName: getRecordName(record, table),
           ttaSessions: ttaData,
           children: []
@@ -61429,28 +61430,28 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           case "workplanSource": {
             const topRecord = workplanSources.find((ws) => ws.id === topLevelId);
             if (!topRecord) return null;
-            const root = createRecordObject(topRecord, workplanSourcesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+            const root = createRecordObject(topRecord, workplanSourcesTable, "workplanSource", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
             if (bottomLevel === "goal" || bottomLevel === "objective" || bottomLevel === "activity") {
               const linkedGoals = goals.filter((goal) => {
                 const linked = goal.getCellValue(goalsLinkField?.id);
                 return linked && linked.some((l) => l.id === topLevelId);
               });
               for (const goal of linkedGoals) {
-                const goalObj = createRecordObject(goal, goalsTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                const goalObj = createRecordObject(goal, goalsTable, "goal", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                 if (bottomLevel === "objective" || bottomLevel === "activity") {
                   const linkedObjectives = objectives.filter((obj) => {
                     const linked = obj.getCellValue(objectivesLinkField?.id);
                     return linked && linked.some((l) => l.id === goal.id);
                   });
                   for (const objective of linkedObjectives) {
-                    const objObj = createRecordObject(objective, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    const objObj = createRecordObject(objective, objectivesTable, "objective", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                     if (bottomLevel === "activity") {
                       const linkedActivities = activities.filter((activity) => {
                         const linked = activity.getCellValue(activitiesLinkField?.id);
                         return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
                       });
                       for (const activity of linkedActivities) {
-                        const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                        const actObj = createRecordObject(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                         objObj.children.push(actObj);
                       }
                     }
@@ -61465,21 +61466,21 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           case "goal": {
             const topRecord = goals.find((g) => g.id === topLevelId);
             if (!topRecord) return null;
-            const root = createRecordObject(topRecord, goalsTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+            const root = createRecordObject(topRecord, goalsTable, "goal", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
             if (bottomLevel === "objective" || bottomLevel === "activity") {
               const linkedObjectives = objectives.filter((obj) => {
                 const linked = obj.getCellValue(objectivesLinkField?.id);
                 return linked && linked.some((l) => l.id === topLevelId);
               });
               for (const objective of linkedObjectives) {
-                const objObj = createRecordObject(objective, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                const objObj = createRecordObject(objective, objectivesTable, "objective", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                 if (bottomLevel === "activity") {
                   const linkedActivities = activities.filter((activity) => {
                     const linked = activity.getCellValue(activitiesLinkField?.id);
                     return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
                   });
                   for (const activity of linkedActivities) {
-                    const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    const actObj = createRecordObject(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                     objObj.children.push(actObj);
                   }
                 }
@@ -61491,14 +61492,14 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           case "objective": {
             const topRecord = objectives.find((o) => o.id === topLevelId);
             if (!topRecord) return null;
-            const root = createRecordObject(topRecord, objectivesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+            const root = createRecordObject(topRecord, objectivesTable, "objective", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
             if (bottomLevel === "activity") {
               const linkedActivities = activities.filter((activity) => {
                 const linked = activity.getCellValue(activitiesLinkField?.id);
                 return linked && linked.some((l) => l.id === topLevelId) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
               });
               for (const activity of linkedActivities) {
-                const actObj = createRecordObject(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                const actObj = createRecordObject(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                 root.children.push(actObj);
               }
             }
@@ -61508,7 +61509,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
             const topRecord = activities.find((a) => a.id === topLevelId);
             if (!topRecord) return null;
             if (isActivityInDateRange(topRecord, startDate, endDate, activitiesStartDateField, activitiesEndDateField)) {
-              return createRecordObject(topRecord, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+              return createRecordObject(topRecord, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
             }
             return null;
           }

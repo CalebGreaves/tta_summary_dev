@@ -11,6 +11,7 @@ The `buildHierarchicalRecordList()` function generates a nested JSON object with
 {
   "tableId": "tbl72KzV8O1LBmUXj",
   "recordId": "rec123xyz",
+  "type": "workplanSource",
   "recordName": "Workplan Source Name",
   "ttaSessions": [
     {
@@ -26,6 +27,7 @@ The `buildHierarchicalRecordList()` function generates a nested JSON object with
     {
       "tableId": "tbllMymEmuGkCucVM",
       "recordId": "rec456abc",
+      "type": "goal",
       "recordName": "Goal Name",
       "ttaSessions": [
         {
@@ -37,6 +39,7 @@ The `buildHierarchicalRecordList()` function generates a nested JSON object with
         {
           "tableId": "tbl9wK640Z5ZY7e7U",
           "recordId": "recObj001",
+          "type": "objective",
           "recordName": "Objective Name",
           "ttaSessions": [],
           "children": []
@@ -51,6 +54,7 @@ The `buildHierarchicalRecordList()` function generates a nested JSON object with
 
 - **tableId**: The Airtable table ID for this record type
 - **recordId**: The unique record ID in Airtable
+- **type**: The record type ('workplanSource', 'goal', 'objective', or 'activity')
 - **recordName**: The human-readable name of the record (primary field)
 - **ttaSessions**: Array of T/TA sessions linked to this record, filtered by:
   - Date range overlap (session date within report date range)
@@ -58,7 +62,7 @@ The `buildHierarchicalRecordList()` function generates a nested JSON object with
   - Sorted chronologically by date (earliest first)
 - **children**: Array of nested records at the next level of the hierarchy
   - Empty array if this is the bottom level or no child records exist
-  - Each child has the same structure (tableId, recordId, recordName, ttaSessions, children)
+  - Each child has the same structure (tableId, recordId, type, recordName, ttaSessions, children)
 
 ## Table ID Reference
 
@@ -119,6 +123,7 @@ You might get:
 {
   "tableId": "tbl72KzV8O1LBmUXj",
   "recordId": "recWPS001",
+  "type": "workplanSource",
   "recordName": "Tech Improvement Initiative",
   "ttaSessions": [
     {
@@ -130,6 +135,7 @@ You might get:
     {
       "tableId": "tbllMymEmuGkCucVM",
       "recordId": "recGoal001",
+      "type": "goal",
       "recordName": "Improve System Performance",
       "ttaSessions": [
         {
@@ -145,12 +151,14 @@ You might get:
         {
           "tableId": "tbl9wK640Z5ZY7e7U",
           "recordId": "recObj001",
+          "type": "objective",
           "recordName": "Optimize Database Queries",
           "ttaSessions": [],
           "children": [
             {
               "tableId": "tblzBApG5kIfiN9Bs",
               "recordId": "recAct001",
+              "type": "activity",
               "recordName": "Review and Profile Slow Queries",
               "ttaSessions": [
                 {

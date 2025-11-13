@@ -64,8 +64,9 @@ The hierarchical record list is now returned as a **nested JSON object** rather 
 
 ```javascript
 function generateReport(record, depth = 1) {
-  // Create heading with appropriate level
-  const heading = '#'.repeat(depth) + ' ' + record.recordName;
+  // Format the heading using the type field for context
+  const typeLabel = record.type.charAt(0).toUpperCase() + record.type.slice(1);
+  const heading = '#'.repeat(depth) + ' ' + typeLabel + ': ' + record.recordName;
 
   // Add T/TA sessions for this record
   let report = heading + '\n\n';
@@ -92,6 +93,21 @@ const hierarchyData = JSON.parse(record.fields['Hierarchical Records']);
 const report = generateReport(hierarchyData);
 ```
 
+This produces output like:
+```
+# Goal: Improve Efficiency
+
+T/TA Sessions:
+- Planning session
+
+## Objective: Streamline Process
+
+T/TA Sessions:
+- Implementation discussion
+
+### Activity: Document Workflow
+```
+
 ## Example Processing
 
 Given this nested structure:
@@ -99,6 +115,7 @@ Given this nested structure:
 ```json
 {
   "recordId": "rec1",
+  "type": "goal",
   "recordName": "Goal: Improve Efficiency",
   "ttaSessions": [
     { "id": "rec1", "summary": "Planning session" }
@@ -106,6 +123,7 @@ Given this nested structure:
   "children": [
     {
       "recordId": "rec2",
+      "type": "objective",
       "recordName": "Objective: Streamline Process",
       "ttaSessions": [
         { "id": "rec2", "summary": "Implementation discussion" }
@@ -113,6 +131,7 @@ Given this nested structure:
       "children": [
         {
           "recordId": "rec3",
+          "type": "activity",
           "recordName": "Activity: Document Workflow",
           "ttaSessions": [],
           "children": []
@@ -225,6 +244,7 @@ Each node in the tree has these fields:
 |-------|------|-------------|
 | `tableId` | string | Airtable table ID (tbl...) |
 | `recordId` | string | Airtable record ID (rec...) |
+| `type` | string | Record type: 'workplanSource', 'goal', 'objective', or 'activity' |
 | `recordName` | string | Human-readable record name |
 | `ttaSessions` | array | T/TA sessions linked to this record |
 | `children` | array | Child records in the hierarchy |
