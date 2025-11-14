@@ -11,7 +11,7 @@ import {
     Icon,
 } from '@airtable/blocks/ui';
 import React, {useState, useMemo, useEffect, useRef} from 'react';
-import { buildHierarchicalRecordList } from './buildHierarchy';
+import { buildHierarchicalRecordList, toSuperCompactFormat } from './buildHierarchy';
 
 // Convert camelCase or backend names to readable labels
 const getReadableLabel = (value) => {
@@ -73,6 +73,8 @@ function ReportSelectorApp() {
     const [isGenerating, setIsGenerating] = useState(false); // loading state
     const [generatedReport, setGeneratedReport] = useState(''); // the generated report content
     const [debugJsonOutput, setDebugJsonOutput] = useState(''); // for debugging JSON output
+
+    const [jsonCharacterCount, setJsonCharacterCount] = useState(0);
 
     // Ref for dropdown to handle click-outside
     const dropdownRef = useRef(null);
@@ -382,16 +384,25 @@ function ReportSelectorApp() {
                 activitiesEndDateField,
                 ttaSessions,
                 ttaSessionsLinkField,
-                'fldJYcVHEF4jadCdh', // T/TA Summary for AI field ID
+                'fldJYcVHEF4jadCdh',
                 ttaSessionsDateField
             );
 
-            // Log and display JSON for debugging
+            // Create JSON string (pretty-printed for readability)
             const jsonOutput = JSON.stringify(hierarchicalRecords, null, 2);
-            console.log('Hierarchical Records JSON:', jsonOutput);
-            setDebugJsonOutput(jsonOutput);
+            const characterCount = jsonOutput.length;
 
-            // Get the Report Requests table by ID
+            console.log('Hierarchical Records JSON length:', characterCount);
+            console.log('OUTPUT:',jsonOutput)
+            setDebugJsonOutput(jsonOutput);
+            setJsonCharacterCount(characterCount);
+
+            // Convert to base64 data URL
+            const base64Data = btoa(unescape(encodeURIComponent(jsonOutput)));
+            const dataUrl = `data:application/json;base64,${base64Data}`;
+            const filename = `hierarchy_${new Date().getTime()}.json`;
+
+            // Get the Report Requests table
             const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
 
             if (!reportRequestsTable) {
@@ -400,11 +411,11 @@ function ReportSelectorApp() {
                 return;
             }
 
-            // Create the record with the hierarchical data
+            // Create the record with the JSON as an attachment using data URL
             const newRecord = await reportRequestsTable.createRecordsAsync([
                 {
                     fields: {
-                        'Hierarchical Records': JSON.stringify(hierarchicalRecords),
+                        'Hierarchy JSON File': [{ url: dataUrl, filename: filename }],
                         'Start Date': startDate,
                         'End Date': endDate,
                         'Status': { name: 'New' }

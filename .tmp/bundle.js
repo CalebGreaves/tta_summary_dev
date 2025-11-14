@@ -61366,7 +61366,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
   });
 
   // frontend/buildHierarchy.js
-  var getRecordName, isActivityInDateRange, getTTASessionsForRecord, createRecordObject, createRecordObjectWithTTA, collectTTAFromActivities, addInheritedTTA, buildHierarchicalRecordList;
+  var getRecordName, isActivityInDateRange, createRecordObject, createRecordObjectWithTTA, collectTTAFromActivities, addInheritedTTA, removeActivityNodes, buildHierarchicalRecordList;
   var init_buildHierarchy = __esm({
     "frontend/buildHierarchy.js"() {
       getRecordName = (record, table) => {
@@ -61389,11 +61389,20 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         if (userEnd && actStart > userEnd) return false;
         return true;
       };
-      getTTASessionsForRecord = (recordId, ttaSessions, ttaLinkField, startDate, endDate, ttaDateField) => {
-        if (!ttaLinkField) return [];
-        const linkedTTA = ttaSessions.filter((session) => {
-          const linked = session.getCellValue(ttaLinkField?.id);
-          if (!linked || !linked.some((l) => l.id === recordId)) return false;
+      createRecordObject = (record, table, recordType) => {
+        return {
+          tableId: table.id,
+          recordId: record.id,
+          type: recordType,
+          recordName: getRecordName(record, table),
+          ttaSessions: [],
+          children: []
+        };
+      };
+      createRecordObjectWithTTA = (record, table, recordType, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
+        const ttaForRecord = ttaSessions.filter((session) => {
+          const linked = session.getCellValue(ttaSessionsLinkField?.id);
+          if (!linked || !linked.some((l) => l.id === record.id)) return false;
           if (!startDate && !endDate) return true;
           const sessionDate = session.getCellValue(ttaDateField?.id);
           if (!sessionDate) return false;
@@ -61404,19 +61413,6 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           if (userEnd && date > userEnd) return false;
           return true;
         });
-        return linkedTTA;
-      };
-      createRecordObject = (record, table, recordType) => {
-        return {
-          tableId: table.id,
-          recordId: record.id,
-          type: recordType,
-          recordName: getRecordName(record, table),
-          children: []
-        };
-      };
-      createRecordObjectWithTTA = (record, table, recordType, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
-        const ttaForRecord = getTTASessionsForRecord(record.id, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField);
         const ttaData = ttaForRecord.sort((a, b) => {
           const dateA = a.getCellValue(ttaDateField?.id);
           const dateB = b.getCellValue(ttaDateField?.id);
@@ -61453,70 +61449,49 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         traverse(node);
         return Array.from(ttaMap.values());
       };
-      addInheritedTTA = (node) => {
+      addInheritedTTA = (node, bottomLevel) => {
         if (node.type !== "activity") {
           if (node.children && node.children.length > 0) {
             for (const child of node.children) {
-              addInheritedTTA(child);
+              addInheritedTTA(child, bottomLevel);
             }
-            const collectedTTA = collectTTAFromActivities(node);
-            if (collectedTTA.length > 0) {
-              node.ttaSessions = collectedTTA;
+            if (node.type === bottomLevel) {
+              const collectedTTA = collectTTAFromActivities(node);
+              if (collectedTTA.length > 0) {
+                node.ttaSessions = collectedTTA;
+              }
             }
           }
         }
       };
+      removeActivityNodes = (node) => {
+        if (node.children && node.children.length > 0) {
+          for (const child of node.children) {
+            removeActivityNodes(child);
+          }
+          node.children = node.children.filter((child) => child.type !== "activity");
+        }
+      };
       buildHierarchicalRecordList = (topLevel, topLevelId, bottomLevel, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable, workplanSources, goals, objectives, activities, goalsLinkField, objectivesLinkField, objectivesToSourcesLinkField, activitiesLinkField, startDate, endDate, activitiesStartDateField, activitiesEndDateField, ttaSessions, ttaSessionsLinkField, ttaSummaryForAIFieldId, ttaDateField) => {
+        let root = null;
         switch (topLevel) {
           case "workplanSource": {
             const topRecord = workplanSources.find((ws) => ws.id === topLevelId);
             if (!topRecord) return null;
-            const root = createRecordObject(topRecord, workplanSourcesTable, "workplanSource");
-            if (bottomLevel === "goal" || bottomLevel === "objective" || bottomLevel === "activity") {
-              const linkedGoals = goals.filter((goal) => {
-                const linked = goal.getCellValue(goalsLinkField?.id);
-                return linked && linked.some((l) => l.id === topLevelId);
-              });
+            root = createRecordObject(topRecord, workplanSourcesTable, "workplanSource");
+            const linkedGoals = goals.filter((goal) => {
+              const linked = goal.getCellValue(goalsLinkField?.id);
+              return linked && linked.some((l) => l.id === topLevelId);
+            });
+            if (linkedGoals.length > 0) {
               for (const goal of linkedGoals) {
-                const goalObj = bottomLevel === "goal" ? createRecordObjectWithTTA(goal, goalsTable, "goal", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) : createRecordObject(goal, goalsTable, "goal");
-                if (bottomLevel === "objective" || bottomLevel === "activity") {
-                  const linkedObjectives = objectives.filter((obj) => {
-                    const linked = obj.getCellValue(objectivesLinkField?.id);
-                    return linked && linked.some((l) => l.id === goal.id);
-                  });
-                  for (const objective of linkedObjectives) {
-                    const objObj = bottomLevel === "objective" ? createRecordObjectWithTTA(objective, objectivesTable, "objective", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) : createRecordObject(objective, objectivesTable, "objective");
-                    if (bottomLevel === "activity") {
-                      const linkedActivities = activities.filter((activity) => {
-                        const linked = activity.getCellValue(activitiesLinkField?.id);
-                        return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
-                      });
-                      for (const activity of linkedActivities) {
-                        const actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
-                        objObj.children.push(actObj);
-                      }
-                    }
-                    goalObj.children.push(objObj);
-                  }
-                }
-                root.children.push(goalObj);
-              }
-              addInheritedTTA(root);
-            }
-            return root;
-          }
-          case "goal": {
-            const topRecord = goals.find((g) => g.id === topLevelId);
-            if (!topRecord) return null;
-            const root = bottomLevel === "goal" ? createRecordObjectWithTTA(topRecord, goalsTable, "goal", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) : createRecordObject(topRecord, goalsTable, "goal");
-            if (bottomLevel === "objective" || bottomLevel === "activity") {
-              const linkedObjectives = objectives.filter((obj) => {
-                const linked = obj.getCellValue(objectivesLinkField?.id);
-                return linked && linked.some((l) => l.id === topLevelId);
-              });
-              for (const objective of linkedObjectives) {
-                const objObj = bottomLevel === "objective" ? createRecordObjectWithTTA(objective, objectivesTable, "objective", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) : createRecordObject(objective, objectivesTable, "objective");
-                if (bottomLevel === "activity") {
+                const goalObj = createRecordObject(goal, goalsTable, "goal");
+                const linkedObjectives = objectives.filter((obj) => {
+                  const linked = obj.getCellValue(objectivesLinkField?.id);
+                  return linked && linked.some((l) => l.id === goal.id);
+                });
+                for (const objective of linkedObjectives) {
+                  const objObj = createRecordObject(objective, objectivesTable, "objective");
                   const linkedActivities = activities.filter((activity) => {
                     const linked = activity.getCellValue(activitiesLinkField?.id);
                     return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
@@ -61525,29 +61500,65 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                     const actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                     objObj.children.push(actObj);
                   }
+                  goalObj.children.push(objObj);
+                }
+                root.children.push(goalObj);
+              }
+            } else {
+              const linkedObjectives = objectives.filter((obj) => {
+                const linked = obj.getCellValue(objectivesToSourcesLinkField?.id);
+                return linked && linked.some((l) => l.id === topLevelId);
+              });
+              for (const objective of linkedObjectives) {
+                const objObj = createRecordObject(objective, objectivesTable, "objective");
+                const linkedActivities = activities.filter((activity) => {
+                  const linked = activity.getCellValue(activitiesLinkField?.id);
+                  return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
+                });
+                for (const activity of linkedActivities) {
+                  const actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                  objObj.children.push(actObj);
                 }
                 root.children.push(objObj);
               }
-              addInheritedTTA(root);
             }
-            return root;
+            break;
+          }
+          case "goal": {
+            const topRecord = goals.find((g) => g.id === topLevelId);
+            if (!topRecord) return null;
+            root = createRecordObject(topRecord, goalsTable, "goal");
+            const linkedObjectives = objectives.filter((obj) => {
+              const linked = obj.getCellValue(objectivesLinkField?.id);
+              return linked && linked.some((l) => l.id === topLevelId);
+            });
+            for (const objective of linkedObjectives) {
+              const objObj = createRecordObject(objective, objectivesTable, "objective");
+              const linkedActivities = activities.filter((activity) => {
+                const linked = activity.getCellValue(activitiesLinkField?.id);
+                return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
+              });
+              for (const activity of linkedActivities) {
+                const actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                objObj.children.push(actObj);
+              }
+              root.children.push(objObj);
+            }
+            break;
           }
           case "objective": {
             const topRecord = objectives.find((o) => o.id === topLevelId);
             if (!topRecord) return null;
-            const root = bottomLevel === "objective" ? createRecordObjectWithTTA(topRecord, objectivesTable, "objective", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) : createRecordObject(topRecord, objectivesTable, "objective");
-            if (bottomLevel === "activity") {
-              const linkedActivities = activities.filter((activity) => {
-                const linked = activity.getCellValue(activitiesLinkField?.id);
-                return linked && linked.some((l) => l.id === topLevelId) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
-              });
-              for (const activity of linkedActivities) {
-                const actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
-                root.children.push(actObj);
-              }
-              addInheritedTTA(root);
+            root = createRecordObject(topRecord, objectivesTable, "objective");
+            const linkedActivities = activities.filter((activity) => {
+              const linked = activity.getCellValue(activitiesLinkField?.id);
+              return linked && linked.some((l) => l.id === topLevelId) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
+            });
+            for (const activity of linkedActivities) {
+              const actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+              root.children.push(actObj);
             }
-            return root;
+            break;
           }
           case "activity": {
             const topRecord = activities.find((a) => a.id === topLevelId);
@@ -61560,6 +61571,11 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           default:
             return null;
         }
+        if (bottomLevel !== "activity") {
+          addInheritedTTA(root, bottomLevel);
+          removeActivityNodes(root);
+        }
+        return root;
       };
     }
   });
@@ -62191,6 +62207,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     const [isGenerating, setIsGenerating] = (0, import_react.useState)(false);
     const [generatedReport, setGeneratedReport] = (0, import_react.useState)("");
     const [debugJsonOutput, setDebugJsonOutput] = (0, import_react.useState)("");
+    const [jsonCharacterCount, setJsonCharacterCount] = (0, import_react.useState)(0);
     const dropdownRef = (0, import_react.useRef)(null);
     (0, import_react.useEffect)(() => {
       const handleClickOutside = (event) => {
@@ -62426,12 +62443,17 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           ttaSessions,
           ttaSessionsLinkField,
           "fldJYcVHEF4jadCdh",
-          // T/TA Summary for AI field ID
           ttaSessionsDateField
         );
         const jsonOutput = JSON.stringify(hierarchicalRecords, null, 2);
-        console.log("Hierarchical Records JSON:", jsonOutput);
+        const characterCount = jsonOutput.length;
+        console.log("Hierarchical Records JSON length:", characterCount);
+        console.log("OUTPUT:", jsonOutput);
         setDebugJsonOutput(jsonOutput);
+        setJsonCharacterCount(characterCount);
+        const base64Data = btoa(unescape(encodeURIComponent(jsonOutput)));
+        const dataUrl = `data:application/json;base64,${base64Data}`;
+        const filename = `hierarchy_${(/* @__PURE__ */ new Date()).getTime()}.json`;
         const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
         if (!reportRequestsTable) {
           alert("Report Requests table not found. Please check the table ID.");
@@ -62441,7 +62463,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         const newRecord = await reportRequestsTable.createRecordsAsync([
           {
             fields: {
-              "Hierarchical Records": JSON.stringify(hierarchicalRecords),
+              "Hierarchy JSON File": [{ url: dataUrl, filename }],
               "Start Date": startDate,
               "End Date": endDate,
               "Status": { name: "New" }
@@ -62490,60 +62512,60 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
       return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 3, backgroundColor: "lightGray1", children: [
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "large", children: "Configuration Needed" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 465,
+          lineNumber: 476,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 2, children: "Please ensure your base has these tables with these exact names:" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 466,
+          lineNumber: 477,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginTop: 2, children: [
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Workplan Sources" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 470,
+            lineNumber: 481,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Goals" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 471,
+            lineNumber: 482,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Objectives" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 472,
+            lineNumber: 483,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 Activities" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 473,
+            lineNumber: 484,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: "\u2022 T/TA Sessions" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 474,
+            lineNumber: 485,
             columnNumber: 21
           }, this)
         ] }, void 0, true, {
           fileName: "frontend/index.js",
-          lineNumber: 469,
+          lineNumber: 480,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 2, textColor: "light", children: "(Or update the table names in the code)" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 476,
+          lineNumber: 487,
           columnNumber: 17
         }, this)
       ] }, void 0, true, {
         fileName: "frontend/index.js",
-        lineNumber: 464,
+        lineNumber: 475,
         columnNumber: 13
       }, this);
     }
     return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 3, backgroundColor: "lightGray1", minHeight: "100vh", display: "flex", justifyContent: "center", children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { maxWidth: "800px", width: "100%", children: [
       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "xlarge", marginBottom: 3, children: "Work Report Selector" }, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 486,
+        lineNumber: 497,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62558,13 +62580,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 3, children: "What should the report cover?" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 497,
+              lineNumber: 508,
               columnNumber: 17
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Generate a report about:" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 501,
+                lineNumber: 512,
                 columnNumber: 21
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", children: [
@@ -62588,7 +62610,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 510,
+                    lineNumber: 521,
                     columnNumber: 33
                   },
                   this
@@ -62604,23 +62626,23 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 519,
+                    lineNumber: 530,
                     columnNumber: 33
                   },
                   this
                 )
               ] }, option.value, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 509,
+                lineNumber: 520,
                 columnNumber: 29
               }, this)) }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 502,
+                lineNumber: 513,
                 columnNumber: 21
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 500,
+              lineNumber: 511,
               columnNumber: 17
             }, this),
             topLevel && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "row", gap: 3, marginBottom: 3, alignItems: "flex-end", children: [
@@ -62638,12 +62660,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                     children: [
                       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: topLevelId ? filteredTopLevelOptions.find((opt) => opt.value === topLevelId)?.label || "Unknown" : `Select ${getReadableLabel(topLevel)}...` }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 545,
+                        lineNumber: 556,
                         columnNumber: 33
                       }, this),
                       /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Icon, { name: "caret", size: 16 }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 550,
+                        lineNumber: 561,
                         columnNumber: 33
                       }, this)
                     ]
@@ -62652,7 +62674,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   true,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 536,
+                    lineNumber: 547,
                     columnNumber: 29
                   },
                   this
@@ -62684,13 +62706,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                         false,
                         {
                           fileName: "frontend/index.js",
-                          lineNumber: 568,
+                          lineNumber: 579,
                           columnNumber: 41
                         },
                         this
                       ) }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 567,
+                        lineNumber: 578,
                         columnNumber: 37
                       }, this),
                       filteredTopLevelOptions.length > 0 ? filteredTopLevelOptions.map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62714,7 +62736,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                           },
                           children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: option.label }, void 0, false, {
                             fileName: "frontend/index.js",
-                            lineNumber: 600,
+                            lineNumber: 611,
                             columnNumber: 49
                           }, this)
                         },
@@ -62722,13 +62744,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                         false,
                         {
                           fileName: "frontend/index.js",
-                          lineNumber: 581,
+                          lineNumber: 592,
                           columnNumber: 45
                         },
                         this
                       )) : /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { padding: 2, textColor: "light", children: "No matches found" }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 604,
+                        lineNumber: 615,
                         columnNumber: 41
                       }, this)
                     ]
@@ -62737,20 +62759,20 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   true,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 555,
+                    lineNumber: 566,
                     columnNumber: 33
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 534,
+                lineNumber: 545,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", marginRight: "16px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { htmlFor: "startDate", children: "Start Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 614,
+                  lineNumber: 625,
                   columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62766,20 +62788,20 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 615,
+                    lineNumber: 626,
                     columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 613,
+                lineNumber: 624,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Label, { htmlFor: "endDate", children: "End Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 626,
+                  lineNumber: 637,
                   columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62795,25 +62817,25 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 627,
+                    lineNumber: 638,
                     columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 625,
+                lineNumber: 636,
                 columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 532,
+              lineNumber: 543,
               columnNumber: 21
             }, this),
             topLevel && topLevelId && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Show detail down to:" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 641,
+                lineNumber: 652,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", flexDirection: "column", gap: 2, children: getBottomLevelOptions().map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { display: "flex", alignItems: "center", gap: 2, marginY: 2, children: [
@@ -62832,7 +62854,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 645,
+                    lineNumber: 656,
                     columnNumber: 37
                   },
                   this
@@ -62848,23 +62870,23 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 654,
+                    lineNumber: 665,
                     columnNumber: 37
                   },
                   this
                 )
               ] }, option.value, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 644,
+                lineNumber: 655,
                 columnNumber: 33
               }, this)) }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 642,
+                lineNumber: 653,
                 columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 640,
+              lineNumber: 651,
               columnNumber: 21
             }, this)
           ]
@@ -62873,7 +62895,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 489,
+          lineNumber: 500,
           columnNumber: 17
         },
         this
@@ -62888,19 +62910,19 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 1, children: "Summary" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 675,
+              lineNumber: 686,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "large", children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("strong", { children: filteredSessions.length }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 677,
+                lineNumber: 688,
                 columnNumber: 25
               }, this),
               " T/TA Sessions match your selection"
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 676,
+              lineNumber: 687,
               columnNumber: 21
             }, this),
             startDate && endDate && /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginTop: 1, textColor: "light", children: [
@@ -62910,7 +62932,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               new Date(endDate).toLocaleDateString()
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 680,
+              lineNumber: 691,
               columnNumber: 25
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62927,7 +62949,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 684,
+                lineNumber: 695,
                 columnNumber: 21
               },
               this
@@ -62938,7 +62960,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 669,
+          lineNumber: 680,
           columnNumber: 17
         },
         this
@@ -62958,12 +62980,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Generating Report..." }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 709,
+              lineNumber: 720,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { marginBottom: 2, textColor: "light", children: "This may take a moment while the AI summarizes your data." }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 710,
+              lineNumber: 721,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -62982,7 +63004,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 713,
+                lineNumber: 724,
                 columnNumber: 21
               },
               this
@@ -62994,7 +63016,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                         }
                     ` }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 723,
+              lineNumber: 734,
               columnNumber: 21
             }, this)
           ]
@@ -63003,7 +63025,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 698,
+          lineNumber: 709,
           columnNumber: 17
         },
         this
@@ -63020,12 +63042,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Debug: Hierarchical Records JSON" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 742,
+              lineNumber: 753,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { size: "small", children: debugJsonOutput }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 743,
+              lineNumber: 754,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Box, { marginTop: 2, children: [
@@ -63044,7 +63066,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                 false,
                 {
                   fileName: "frontend/index.js",
-                  lineNumber: 745,
+                  lineNumber: 756,
                   columnNumber: 25
                 },
                 this
@@ -63066,14 +63088,14 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                 false,
                 {
                   fileName: "frontend/index.js",
-                  lineNumber: 755,
+                  lineNumber: 766,
                   columnNumber: 25
                 },
                 this
               )
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 744,
+              lineNumber: 755,
               columnNumber: 21
             }, this)
           ]
@@ -63082,7 +63104,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 734,
+          lineNumber: 745,
           columnNumber: 17
         },
         this
@@ -63099,12 +63121,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Heading, { size: "small", marginBottom: 2, children: "Generated Report" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 781,
+              lineNumber: 792,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(import_ui.Text, { children: generatedReport }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 782,
+              lineNumber: 793,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(
@@ -63124,7 +63146,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 783,
+                lineNumber: 794,
                 columnNumber: 21
               },
               this
@@ -63135,18 +63157,18 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 773,
+          lineNumber: 784,
           columnNumber: 17
         },
         this
       )
     ] }, void 0, true, {
       fileName: "frontend/index.js",
-      lineNumber: 485,
+      lineNumber: 496,
       columnNumber: 13
     }, this) }, void 0, false, {
       fileName: "frontend/index.js",
-      lineNumber: 484,
+      lineNumber: 495,
       columnNumber: 9
     }, this);
   }
@@ -63185,7 +63207,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
       };
       (0, import_ui.initializeBlock)(() => /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(ReportSelectorApp, {}, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 802,
+        lineNumber: 813,
         columnNumber: 23
       }));
     }
