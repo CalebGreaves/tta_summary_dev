@@ -353,8 +353,17 @@ function ReportSelectorApp() {
             .sort((a, b) => b.score - a.score);
     }, [topLevel, topLevelSearchTerm, workplanSources, goals, objectives, activities, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable]);
     
-    // Report Requests table ID
+    // Report Requests table ID and field IDs
     const REPORT_REQUESTS_TABLE_ID = 'tblnw1RnPcRcrqtbh';
+    const REPORT_REQUESTS_FIELDS = {
+        JSON_1: 'fldGuDUYsPon4lraf',
+        JSON_2: 'fldxtylLwPTPhJ53C',
+        JSON_3: 'fldBLnsxlwsytrPeG',
+        JSON_4: 'flddwKxR1d3rHTzI0',
+        START_DATE: 'Start Date',
+        END_DATE: 'End Date',
+        STATUS: 'Status',
+    };
 
     // Handler to generate report
     const handleGenerateReport = async () => {
@@ -384,8 +393,10 @@ function ReportSelectorApp() {
                 activitiesEndDateField,
                 ttaSessions,
                 ttaSessionsLinkField,
-                'fldJYcVHEF4jadCdh',
-                ttaSessionsDateField
+                'fldJYcVHEF4jadCdh', // T/TA Summary for AI field
+                ttaSessionsDateField,
+                'fldkAnMJgK3XdrGF4', // Activity Comments field (for Board Plan)
+                'fld6Cro64lmv8jrd3'  // Activity Status field (for Board Plan)
             );
 
             // Create JSON string (pretty-printed for readability)
@@ -393,14 +404,9 @@ function ReportSelectorApp() {
             const characterCount = jsonOutput.length;
 
             console.log('Hierarchical Records JSON length:', characterCount);
-            console.log('OUTPUT:',jsonOutput)
+            console.log('OUTPUT:', jsonOutput);
             setDebugJsonOutput(jsonOutput);
             setJsonCharacterCount(characterCount);
-
-            // Convert to base64 data URL
-            const base64Data = btoa(unescape(encodeURIComponent(jsonOutput)));
-            const dataUrl = `data:application/json;base64,${base64Data}`;
-            const filename = `hierarchy_${new Date().getTime()}.json`;
 
             // Get the Report Requests table
             const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
@@ -411,25 +417,75 @@ function ReportSelectorApp() {
                 return;
             }
 
-            // Create the record with the JSON as an attachment using data URL
-            const newRecord = await reportRequestsTable.createRecordsAsync([
-                {
-                    fields: {
-                        'Hierarchy JSON File': [{ url: dataUrl, filename: filename }],
-                        'Start Date': startDate,
-                        'End Date': endDate,
-                        'Status': { name: 'New' }
-                    }
-                }
-            ]);
+            console.log('Splitting JSON across multiple Long Text fields...');
 
-            if (newRecord && newRecord.length > 0) {
-                setReportRequestId(newRecord[0]);
-                // Poll for completion
-                pollForCompletion(newRecord[0]);
+            // Split JSON across multiple fields (100,000 chars each)
+            const FIELD_LIMIT = 100000;
+            const MAX_FIELDS = 4;
+            const MAX_TOTAL = FIELD_LIMIT * MAX_FIELDS; // 400,000 characters
+
+            if (characterCount > MAX_TOTAL) {
+                console.error(`JSON too large: ${characterCount} characters (limit: ${MAX_TOTAL})`);
+                alert(`The report data is too large (${Math.round(characterCount/1000)}KB, limit is ${MAX_TOTAL/1000}KB).\n\n` +
+                      `Please:\n` +
+                      `1. Select a smaller date range\n` +
+                      `2. Select a lower-level item\n` +
+                      `3. Reduce the bottom level detail`);
+                setIsGenerating(false);
+                return;
+            }
+
+            try {
+                // Split JSON into chunks
+                const chunks = [];
+                for (let i = 0; i < jsonOutput.length; i += FIELD_LIMIT) {
+                    chunks.push(jsonOutput.substring(i, i + FIELD_LIMIT));
+                }
+
+                console.log(`Created ${chunks.length} chunk(s)`);
+                chunks.forEach((chunk, i) => {
+                    console.log(`  Chunk ${i + 1}: ${chunk.length} characters`);
+                });
+
+                // Create fields object with JSON chunks
+                const fields = {};
+                
+                // Add JSON chunks to appropriate fields
+                if (chunks.length > 0) fields[REPORT_REQUESTS_FIELDS.JSON_1] = chunks[0];
+                if (chunks.length > 1) fields[REPORT_REQUESTS_FIELDS.JSON_2] = chunks[1];
+                if (chunks.length > 2) fields[REPORT_REQUESTS_FIELDS.JSON_3] = chunks[2];
+                if (chunks.length > 3) fields[REPORT_REQUESTS_FIELDS.JSON_4] = chunks[3];
+
+                // Add dates if provided
+                if (startDate) {
+                    fields[REPORT_REQUESTS_FIELDS.START_DATE] = startDate;
+                }
+                if (endDate) {
+                    fields[REPORT_REQUESTS_FIELDS.END_DATE] = endDate;
+                }
+
+                // Status field will be set by default value (don't set it to avoid conflicts)
+
+                console.log('Creating Airtable record with JSON split across fields...');
+                const newRecord = await reportRequestsTable.createRecordsAsync([
+                    { fields: fields }
+                ]);
+
+                console.log('✅ Record created successfully:', newRecord);
+                
+                if (newRecord && newRecord.length > 0) {
+                    setReportRequestId(newRecord[0]);
+                    pollForCompletion(newRecord[0]);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                console.error('Error message:', error.message);
+                alert('Error creating report: ' + error.message);
+                setIsGenerating(false);
             }
         } catch (error) {
-            console.error('Error creating report request:', error);
+            console.error('Error building hierarchy or creating report:', error);
             alert('Error creating report request: ' + error.message);
             setIsGenerating(false);
         }

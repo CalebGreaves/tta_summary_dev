@@ -6,6 +6,88 @@ const getRecordName = (record, table) => {
 };
 
 /**
+ * Checks if a record is part of the Board Plan hierarchy
+ * Returns the board plan workplan source ID if found, null otherwise
+ */
+const findBoardPlanSource = (
+    recordType,
+    recordId,
+    workplanSources,
+    goals,
+    objectives,
+    goalsLinkField,
+    objectivesLinkField,
+    objectivesToSourcesLinkField
+) => {
+    // Helper to check if a workplan source is Board Plan
+    const isBoardPlan = (workplanSource) => {
+        const name = workplanSource.name || '';
+        return name.toLowerCase().includes('board plan');
+    };
+
+    switch (recordType) {
+        case 'workplanSource': {
+            const ws = workplanSources.find(w => w.id === recordId);
+            return ws && isBoardPlan(ws) ? recordId : null;
+        }
+
+        case 'goal': {
+            const goal = goals.find(g => g.id === recordId);
+            if (!goal) return null;
+            
+            const linked = goal.getCellValue(goalsLinkField?.id);
+            if (!linked) return null;
+
+            for (const link of linked) {
+                const ws = workplanSources.find(w => w.id === link.id);
+                if (ws && isBoardPlan(ws)) return link.id;
+            }
+            return null;
+        }
+
+        case 'objective': {
+            const objective = objectives.find(o => o.id === recordId);
+            if (!objective) return null;
+
+            // Check direct link to workplan sources
+            const directLinked = objective.getCellValue(objectivesToSourcesLinkField?.id);
+            if (directLinked) {
+                for (const link of directLinked) {
+                    const ws = workplanSources.find(w => w.id === link.id);
+                    if (ws && isBoardPlan(ws)) return link.id;
+                }
+            }
+
+            // Check through goals
+            const goalLinked = objective.getCellValue(objectivesLinkField?.id);
+            if (goalLinked) {
+                for (const goalLink of goalLinked) {
+                    const goal = goals.find(g => g.id === goalLink.id);
+                    if (!goal) continue;
+
+                    const wsLinked = goal.getCellValue(goalsLinkField?.id);
+                    if (wsLinked) {
+                        for (const wsLink of wsLinked) {
+                            const ws = workplanSources.find(w => w.id === wsLink.id);
+                            if (ws && isBoardPlan(ws)) return wsLink.id;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        case 'activity': {
+            // Activities don't need to check - they're always leaves
+            return null;
+        }
+
+        default:
+            return null;
+    }
+};
+
+/**
  * Checks if an activity's date range overlaps with the user-selected date range
  */
 const isActivityInDateRange = (activity, startDate, endDate, startDateField, endDateField) => {
@@ -32,7 +114,7 @@ const isActivityInDateRange = (activity, startDate, endDate, startDateField, end
 };
 
 /**
- * Helper function to create a record object (without T/TA sessions)
+ * Helper function to create a record object (without T/TA sessions or activity details)
  */
 const createRecordObject = (record, table, recordType) => {
     return {
@@ -46,7 +128,7 @@ const createRecordObject = (record, table, recordType) => {
 };
 
 /**
- * Helper function to create a record object with T/TA sessions
+ * Helper function to create a record object with T/TA sessions (for non-Board Plan)
  */
 const createRecordObjectWithTTA = (record, table, recordType, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
     const ttaForRecord = ttaSessions.filter(session => {
@@ -90,6 +172,24 @@ const createRecordObjectWithTTA = (record, table, recordType, ttaSessions, ttaSe
 };
 
 /**
+ * Helper function to create an activity object with comments and status (for Board Plan)
+ */
+const createActivityObjectWithDetails = (activity, activitiesTable, startDate, endDate, startDateField, endDateField, commentsFieldId, statusFieldId) => {
+    const comments = activity.getCellValueAsString(commentsFieldId) || '';
+    const status = activity.getCellValueAsString(statusFieldId) || '';
+
+    return {
+        tableId: activitiesTable.id,
+        recordId: activity.id,
+        type: 'activity',
+        recordName: getRecordName(activity, activitiesTable),
+        activityComments: comments,
+        activityStatus: status,
+        children: []
+    };
+};
+
+/**
  * Recursively collects T/TA sessions from all activities in a subtree
  */
 const collectTTAFromActivities = (node) => {
@@ -116,7 +216,59 @@ const collectTTAFromActivities = (node) => {
 };
 
 /**
- * Post-processes the hierarchy to add T/TA sessions to bottom-level nodes only
+ * Recursively collects activities from a Board Plan subtree
+ */
+const collectActivitiesFromSubtree = (node) => {
+    const activities = [];
+
+    const traverse = (n) => {
+        if (n.type === 'activity' && (n.activityComments || n.activityStatus)) {
+            activities.push({
+                name: n.recordName,
+                comments: n.activityComments || '',
+                status: n.activityStatus || 'Not Started'
+            });
+        }
+
+        if (n.children && n.children.length > 0) {
+            for (const child of n.children) {
+                traverse(child);
+            }
+        }
+    };
+
+    traverse(node);
+    return activities;
+};
+
+/**
+ * Recursively collects activity details from all activities in a subtree (for Board Plan)
+ */
+const collectActivityDetails = (node) => {
+    const activities = [];
+
+    const traverse = (n) => {
+        if (n.type === 'activity' && (n.activityComments || n.activityStatus)) {
+            activities.push({
+                recordName: n.recordName,
+                comments: n.activityComments || '',
+                status: n.activityStatus || ''
+            });
+        }
+
+        if (n.children && n.children.length > 0) {
+            for (const child of n.children) {
+                traverse(child);
+            }
+        }
+    };
+
+    traverse(node);
+    return activities;
+};
+
+/**
+ * Post-processes the hierarchy to add T/TA sessions to bottom-level nodes only (for non-Board Plan)
  */
 const addInheritedTTA = (node, bottomLevel) => {
     if (node.type !== 'activity') {
@@ -137,6 +289,27 @@ const addInheritedTTA = (node, bottomLevel) => {
 };
 
 /**
+ * Post-processes the hierarchy to add activity details to bottom-level nodes (for Board Plan)
+ */
+const addInheritedActivityDetails = (node, bottomLevel) => {
+    if (node.type !== 'activity') {
+        if (node.children && node.children.length > 0) {
+            for (const child of node.children) {
+                addInheritedActivityDetails(child, bottomLevel);
+            }
+
+            // Only add activity details to nodes that match the bottom level
+            if (node.type === bottomLevel) {
+                const collectedActivities = collectActivityDetails(node);
+                if (collectedActivities.length > 0) {
+                    node.activityDetails = collectedActivities;
+                }
+            }
+        }
+    }
+};
+
+/**
  * Removes activity nodes from the tree (used when activities are not the bottom level)
  */
 const removeActivityNodes = (node) => {
@@ -148,6 +321,24 @@ const removeActivityNodes = (node) => {
         
         // Then remove activity children
         node.children = node.children.filter(child => child.type !== 'activity');
+    }
+};
+
+/**
+ * Removes all children from nodes at the bottom level
+ * This is used when we've rolled up data to the bottom level and don't need the subtree
+ */
+const removeChildrenAtBottomLevel = (node, bottomLevel) => {
+    if (node.children && node.children.length > 0) {
+        // Recursively process children first
+        for (const child of node.children) {
+            removeChildrenAtBottomLevel(child, bottomLevel);
+        }
+        
+        // If this node is at the bottom level, remove all its children
+        if (node.type === bottomLevel) {
+            node.children = [];
+        }
     }
 };
 
@@ -177,8 +368,24 @@ export const buildHierarchicalRecordList = (
     ttaSessions,
     ttaSessionsLinkField,
     ttaSummaryForAIFieldId,
-    ttaDateField
+    ttaDateField,
+    activitiesCommentsFieldId = 'fldkAnMJgK3XdrGF4',
+    activitiesStatusFieldId = 'fld6Cro64lmv8jrd3'
 ) => {
+    // Determine if this is a Board Plan report
+    const boardPlanSourceId = findBoardPlanSource(
+        topLevel,
+        topLevelId,
+        workplanSources,
+        goals,
+        objectives,
+        goalsLinkField,
+        objectivesLinkField,
+        objectivesToSourcesLinkField
+    );
+
+    const isBoardPlan = boardPlanSourceId !== null;
+
     let root = null;
 
     switch (topLevel) {
@@ -208,7 +415,7 @@ export const buildHierarchicalRecordList = (
                     for (const objective of linkedObjectives) {
                         const objObj = createRecordObject(objective, objectivesTable, 'objective');
 
-                        // Always get linked activities for T/TA collection
+                        // Always get linked activities
                         const linkedActivities = activities.filter(activity => {
                             const linked = activity.getCellValue(activitiesLinkField?.id);
                             return linked && linked.some(l => l.id === objective.id) &&
@@ -216,7 +423,12 @@ export const buildHierarchicalRecordList = (
                         });
 
                         for (const activity of linkedActivities) {
-                            const actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                            let actObj;
+                            if (isBoardPlan) {
+                                actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
+                            } else {
+                                actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                            }
                             objObj.children.push(actObj);
                         }
 
@@ -235,7 +447,7 @@ export const buildHierarchicalRecordList = (
                 for (const objective of linkedObjectives) {
                     const objObj = createRecordObject(objective, objectivesTable, 'objective');
 
-                    // Always get linked activities for T/TA collection
+                    // Always get linked activities
                     const linkedActivities = activities.filter(activity => {
                         const linked = activity.getCellValue(activitiesLinkField?.id);
                         return linked && linked.some(l => l.id === objective.id) &&
@@ -243,7 +455,12 @@ export const buildHierarchicalRecordList = (
                     });
 
                     for (const activity of linkedActivities) {
-                        const actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                        let actObj;
+                        if (isBoardPlan) {
+                            actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
+                        } else {
+                            actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                        }
                         objObj.children.push(actObj);
                     }
 
@@ -269,7 +486,7 @@ export const buildHierarchicalRecordList = (
             for (const objective of linkedObjectives) {
                 const objObj = createRecordObject(objective, objectivesTable, 'objective');
 
-                // Always get linked activities for T/TA collection
+                // Always get linked activities
                 const linkedActivities = activities.filter(activity => {
                     const linked = activity.getCellValue(activitiesLinkField?.id);
                     return linked && linked.some(l => l.id === objective.id) &&
@@ -277,7 +494,12 @@ export const buildHierarchicalRecordList = (
                 });
 
                 for (const activity of linkedActivities) {
-                    const actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    let actObj;
+                    if (isBoardPlan) {
+                        actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
+                    } else {
+                        actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    }
                     objObj.children.push(actObj);
                 }
 
@@ -293,7 +515,7 @@ export const buildHierarchicalRecordList = (
 
             root = createRecordObject(topRecord, objectivesTable, 'objective');
 
-            // Always get linked activities for T/TA collection
+            // Always get linked activities
             const linkedActivities = activities.filter(activity => {
                 const linked = activity.getCellValue(activitiesLinkField?.id);
                 return linked && linked.some(l => l.id === topLevelId) &&
@@ -301,7 +523,12 @@ export const buildHierarchicalRecordList = (
             });
 
             for (const activity of linkedActivities) {
-                const actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                let actObj;
+                if (isBoardPlan) {
+                    actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
+                } else {
+                    actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                }
                 root.children.push(actObj);
             }
 
@@ -313,7 +540,11 @@ export const buildHierarchicalRecordList = (
             if (!topRecord) return null;
 
             if (isActivityInDateRange(topRecord, startDate, endDate, activitiesStartDateField, activitiesEndDateField)) {
-                return createRecordObjectWithTTA(topRecord, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                if (isBoardPlan) {
+                    return createActivityObjectWithDetails(topRecord, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
+                } else {
+                    return createRecordObjectWithTTA(topRecord, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                }
             }
 
             return null;
@@ -323,10 +554,15 @@ export const buildHierarchicalRecordList = (
             return null;
     }
 
-    // Only add inherited T/TA when bottom level is not activity
+    // Post-processing based on whether it's a Board Plan and the bottom level
     if (bottomLevel !== 'activity') {
-        addInheritedTTA(root, bottomLevel);
-        removeActivityNodes(root);
+        if (isBoardPlan) {
+            addInheritedActivityDetails(root, bottomLevel);
+        } else {
+            addInheritedTTA(root, bottomLevel);
+        }
+        // Remove all children at the bottom level (for both Board Plans and regular T/TA)
+        removeChildrenAtBottomLevel(root, bottomLevel);
     }
 
     return root;
@@ -339,12 +575,34 @@ export const buildHierarchicalRecordList = (
 export const toSuperCompactFormat = (node) => {
     if (!node) return null;
 
-    return {
+    const compact = {
         t: node.type,
         n: node.recordName,
-        tta: node.ttaSessions.map(s => s.summary), // Just summaries, no IDs
-        c: node.children.map(child => toSuperCompactFormat(child))
     };
+
+    // Add T/TA sessions if present
+    if (node.ttaSessions && node.ttaSessions.length > 0) {
+        compact.tta = node.ttaSessions.map(s => s.summary);
+    }
+
+    // Add activity details if present (Board Plan)
+    if (node.activityDetails && node.activityDetails.length > 0) {
+        compact.ad = node.activityDetails.map(a => ({
+            n: a.recordName,
+            c: a.comments,
+            s: a.status
+        }));
+    }
+
+    // Add individual activity fields if present (Board Plan leaf nodes)
+    if (node.activityComments || node.activityStatus) {
+        compact.ac = node.activityComments || '';
+        compact.as = node.activityStatus || '';
+    }
+
+    compact.c = node.children.map(child => toSuperCompactFormat(child));
+
+    return compact;
 };
 
 /**
@@ -354,15 +612,40 @@ export const toSuperCompactFormat = (node) => {
 export const fromSuperCompactFormat = (compact) => {
     if (!compact) return null;
 
-    return {
-        tableId: null, // Not stored in compact format
-        recordId: null, // Not stored in compact format
+    const node = {
+        tableId: null,
+        recordId: null,
         type: compact.t,
         recordName: compact.n,
-        ttaSessions: compact.tta.map(summary => ({
-            id: null, // Not stored in compact format
-            summary: summary
-        })),
         children: compact.c.map(child => fromSuperCompactFormat(child))
     };
+
+    // Restore T/TA sessions if present
+    if (compact.tta) {
+        node.ttaSessions = compact.tta.map(summary => ({
+            id: null,
+            summary: summary
+        }));
+    } else {
+        node.ttaSessions = [];
+    }
+
+    // Restore activity details if present (Board Plan)
+    if (compact.ad) {
+        node.activityDetails = compact.ad.map(a => ({
+            recordName: a.n,
+            comments: a.c,
+            status: a.s
+        }));
+    }
+
+    // Restore individual activity fields if present (Board Plan leaf nodes)
+    if (compact.ac !== undefined) {
+        node.activityComments = compact.ac;
+    }
+    if (compact.as !== undefined) {
+        node.activityStatus = compact.as;
+    }
+
+    return node;
 };
