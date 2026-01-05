@@ -11,7 +11,10 @@ import {
     Icon,
 } from '@airtable/blocks/ui';
 import React, {useState, useMemo, useEffect, useRef} from 'react';
-import { buildHierarchicalRecordList, toSuperCompactFormat } from './buildHierarchy';
+import { buildHierarchicalRecordList, toSuperCompactFormat, findWorkplanSource } from './buildHierarchy';
+import { parseMarkdownToSections } from './markdownParser';
+import { ReportRenderer } from './ReportRenderer';
+import { exportToWord, exportToHtml } from './wordExport';
 
 // Convert camelCase or backend names to readable labels
 const getReadableLabel = (value) => {
@@ -71,7 +74,8 @@ function ReportSelectorApp() {
     // Report generation state
     const [reportRequestId, setReportRequestId] = useState(''); // ID of the created report request
     const [isGenerating, setIsGenerating] = useState(false); // loading state
-    const [generatedReport, setGeneratedReport] = useState(''); // the generated report content
+    const [generatedReport, setGeneratedReport] = useState(''); // the generated report content (raw markdown)
+    const [parsedSections, setParsedSections] = useState([]); // parsed hierarchical sections
     const [debugJsonOutput, setDebugJsonOutput] = useState(''); // for debugging JSON output
 
     const [jsonCharacterCount, setJsonCharacterCount] = useState(0);
@@ -354,16 +358,23 @@ function ReportSelectorApp() {
     }, [topLevel, topLevelSearchTerm, workplanSources, goals, objectives, activities, workplanSourcesTable, goalsTable, objectivesTable, activitiesTable]);
     
     // Report Requests table ID and field IDs
-    const REPORT_REQUESTS_TABLE_ID = 'tblnw1RnPcRcrqtbh';
-    const REPORT_REQUESTS_FIELDS = {
-        JSON_1: 'fldGuDUYsPon4lraf',
-        JSON_2: 'fldxtylLwPTPhJ53C',
-        JSON_3: 'fldBLnsxlwsytrPeG',
-        JSON_4: 'flddwKxR1d3rHTzI0',
-        START_DATE: 'Start Date',
-        END_DATE: 'End Date',
-        STATUS: 'Status',
+    const REPORTS_TABLE_ID = 'tbljdC7yREJi2o6Xj';
+    const REPORT_FIELDS = {
+        JSON_1: 'fldEGR4TwA4gS8qha',
+        JSON_2: 'fld82DDMxKyvcHfFC',
+        JSON_3: 'fldslV70JJFdWp0vZ',
+        JSON_4: 'fldpNrAVFWSSzkSIW',
+        START_DATE: 'fldf7QFdRUZvFxrj3',
+        END_DATE: 'fldL9Ddrp8RrAdFax',
+        STATUS: 'fldXhj8L8HcYZ5V7p',
+        GENERATED_REPORT: 'fldUAfi1XDaCxKF17',
+        ERROR_MESSAGE: 'fldLEVcRaU9iWW8qQ',
+        WORKPLAN_SOURCE: 'fldAM3cDCAwMX2aLN',
+        REPORT_TYPE: 'fld7Wx45tPFbvWyaP',
     };
+
+    // Report Type - AI Summary record ID
+    const AI_SUMMARY_REPORT_TYPE_ID = 'rec3vtTQmY8mch9c0';
 
     // Handler to generate report
     const handleGenerateReport = async () => {
@@ -409,9 +420,9 @@ function ReportSelectorApp() {
             setJsonCharacterCount(characterCount);
 
             // Get the Report Requests table
-            const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
+            const reportsTable = base.getTableById(REPORTS_TABLE_ID);
 
-            if (!reportRequestsTable) {
+            if (!reportsTable) {
                 alert('Report Requests table not found. Please check the table ID.');
                 setIsGenerating(false);
                 return;
@@ -447,37 +458,62 @@ function ReportSelectorApp() {
                     console.log(`  Chunk ${i + 1}: ${chunk.length} characters`);
                 });
 
+                // Find the workplan source for this report
+                const workplanSourceId = findWorkplanSource(
+                    topLevel,
+                    topLevelId,
+                    workplanSources,
+                    goals,
+                    objectives,
+                    activities,
+                    goalsLinkField,
+                    objectivesLinkField,
+                    objectivesToSourcesLinkField,
+                    activitiesLinkField
+                );
+
+                console.log('Workplan source ID:', workplanSourceId);
+
                 // Create fields object with JSON chunks
                 const fields = {};
-                
+
                 // Add JSON chunks to appropriate fields
-                if (chunks.length > 0) fields[REPORT_REQUESTS_FIELDS.JSON_1] = chunks[0];
-                if (chunks.length > 1) fields[REPORT_REQUESTS_FIELDS.JSON_2] = chunks[1];
-                if (chunks.length > 2) fields[REPORT_REQUESTS_FIELDS.JSON_3] = chunks[2];
-                if (chunks.length > 3) fields[REPORT_REQUESTS_FIELDS.JSON_4] = chunks[3];
+                if (chunks.length > 0) fields[REPORT_FIELDS.JSON_1] = chunks[0];
+                if (chunks.length > 1) fields[REPORT_FIELDS.JSON_2] = chunks[1];
+                if (chunks.length > 2) fields[REPORT_FIELDS.JSON_3] = chunks[2];
+                if (chunks.length > 3) fields[REPORT_FIELDS.JSON_4] = chunks[3];
 
                 // Add dates if provided
                 if (startDate) {
-                    fields[REPORT_REQUESTS_FIELDS.START_DATE] = startDate;
+                    fields[REPORT_FIELDS.START_DATE] = startDate;
                 }
                 if (endDate) {
-                    fields[REPORT_REQUESTS_FIELDS.END_DATE] = endDate;
+                    fields[REPORT_FIELDS.END_DATE] = endDate;
                 }
+
+                // Add workplan source link
+                if (workplanSourceId) {
+                    fields[REPORT_FIELDS.WORKPLAN_SOURCE] = [{ id: workplanSourceId }];
+                }
+
+                // Add report type link (AI Summary)
+                fields[REPORT_FIELDS.REPORT_TYPE] = [{ id: AI_SUMMARY_REPORT_TYPE_ID }];
 
                 // Status field will be set by default value (don't set it to avoid conflicts)
 
                 console.log('Creating Airtable record with JSON split across fields...');
-                const newRecord = await reportRequestsTable.createRecordsAsync([
+                console.log('Fields:', fields);
+                const newRecord = await reportsTable.createRecordsAsync([
                     { fields: fields }
                 ]);
 
                 console.log('✅ Record created successfully:', newRecord);
-                
+
                 if (newRecord && newRecord.length > 0) {
                     setReportRequestId(newRecord[0]);
                     pollForCompletion(newRecord[0]);
                 }
-                
+
             } catch (error) {
                 console.error('❌ Error:', error);
                 console.error('Error message:', error.message);
@@ -493,18 +529,21 @@ function ReportSelectorApp() {
 
     // Poll for report completion
     const pollForCompletion = (recordId) => {
-        const reportRequestsTable = base.getTableById(REPORT_REQUESTS_TABLE_ID);
+        const reportsTable = base.getTableById(REPORTS_TABLE_ID);
         const pollInterval = setInterval(async () => {
             try {
-                const record = await reportRequestsTable.selectRecordsAsync();
+                const record = await reportsTable.selectRecordsAsync();
                 const reportRecord = record.records.find(r => r.id === recordId);
 
                 if (reportRecord) {
-                    const status = reportRecord.getCellValueAsString('Status');
-                    const report = reportRecord.getCellValueAsString('Generated Report');
+                    const status = reportRecord.getCellValueAsString(REPORT_FIELDS.STATUS);
+                    const report = reportRecord.getCellValueAsString(REPORT_FIELDS.GENERATED_REPORT);
 
                     if (status === 'Ready' && report) {
                         setGeneratedReport(report);
+                        // Parse markdown into hierarchical sections
+                        const sections = parseMarkdownToSections(report);
+                        setParsedSections(sections);
                         setIsGenerating(false);
                         clearInterval(pollInterval);
                     } else if (status === 'Error') {
@@ -836,29 +875,78 @@ function ReportSelectorApp() {
             )}
 
             {/* Generated Report Display */}
-            {generatedReport && !isGenerating && (
+            {generatedReport && !isGenerating && parsedSections && (
                 <Box
                     backgroundColor="white"
                     padding={3}
-                    borderRadius="default"
+                    borderRadius="large"
                     border="thick"
                     marginBottom={3}
-                    style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}
                 >
-                    <Heading size="small" marginBottom={2}>Generated Report</Heading>
-                    <Text>{generatedReport}</Text>
-                    <Button
-                        variant="secondary"
-                        size="large"
-                        marginTop={3}
-                        onClick={() => {
-                            setGeneratedReport('');
-                            setReportRequestId('');
-                            setDebugJsonOutput('');
-                        }}
+                    <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom={3}>
+                        <Heading size="large">Generated Report</Heading>
+                        <Box display="flex" gap={2}>
+                            <Button
+                                variant="primary"
+                                size="default"
+                                icon="download"
+                                onClick={() => {
+                                    const timestamp = new Date().toISOString().slice(0, 10);
+                                    exportToWord(parsedSections, `TTA_Report_${timestamp}.doc`);
+                                }}
+                            >
+                                Download Word
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="default"
+                                icon="download"
+                                onClick={() => {
+                                    const timestamp = new Date().toISOString().slice(0, 10);
+                                    exportToHtml(parsedSections, `TTA_Report_${timestamp}.html`);
+                                }}
+                            >
+                                Download HTML
+                            </Button>
+                        </Box>
+                    </Box>
+
+                    {/* Interactive Report Renderer */}
+                    <Box
+                        maxHeight="600px"
+                        overflow="auto"
+                        padding={2}
+                        backgroundColor="lightGray1"
+                        borderRadius="default"
                     >
-                        Generate Another Report
-                    </Button>
+                        <ReportRenderer sections={parsedSections} />
+                    </Box>
+
+                    {/* Actions */}
+                    <Box display="flex" gap={2} marginTop={3} justifyContent="space-between">
+                        <Button
+                            variant="secondary"
+                            size="default"
+                            onClick={() => {
+                                navigator.clipboard.writeText(generatedReport);
+                                alert('Markdown copied to clipboard!');
+                            }}
+                        >
+                            Copy Markdown
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="default"
+                            onClick={() => {
+                                setGeneratedReport('');
+                                setParsedSections([]);
+                                setReportRequestId('');
+                                setDebugJsonOutput('');
+                            }}
+                        >
+                            Generate Another Report
+                        </Button>
+                    </Box>
                 </Box>
             )}
             </Box>

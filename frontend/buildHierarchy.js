@@ -6,6 +6,99 @@ const getRecordName = (record, table) => {
 };
 
 /**
+ * Finds the workplan source for any record type
+ * Returns the workplan source ID if found, null otherwise
+ */
+export const findWorkplanSource = (
+    recordType,
+    recordId,
+    workplanSources,
+    goals,
+    objectives,
+    activities,
+    goalsLinkField,
+    objectivesLinkField,
+    objectivesToSourcesLinkField,
+    activitiesLinkField
+) => {
+    switch (recordType) {
+        case 'workplanSource': {
+            // Already at workplan source level
+            return recordId;
+        }
+
+        case 'goal': {
+            const goal = goals.find(g => g.id === recordId);
+            if (!goal) return null;
+
+            const linked = goal.getCellValue(goalsLinkField?.id);
+            if (!linked || linked.length === 0) return null;
+
+            // Return the first linked workplan source
+            return linked[0].id;
+        }
+
+        case 'objective': {
+            const objective = objectives.find(o => o.id === recordId);
+            if (!objective) return null;
+
+            // Check direct link to workplan sources first
+            const directLinked = objective.getCellValue(objectivesToSourcesLinkField?.id);
+            if (directLinked && directLinked.length > 0) {
+                return directLinked[0].id;
+            }
+
+            // Check through goals
+            const goalLinked = objective.getCellValue(objectivesLinkField?.id);
+            if (goalLinked && goalLinked.length > 0) {
+                const goal = goals.find(g => g.id === goalLinked[0].id);
+                if (goal) {
+                    const wsLinked = goal.getCellValue(goalsLinkField?.id);
+                    if (wsLinked && wsLinked.length > 0) {
+                        return wsLinked[0].id;
+                    }
+                }
+            }
+            return null;
+        }
+
+        case 'activity': {
+            const activity = activities.find(a => a.id === recordId);
+            if (!activity) return null;
+
+            // Get linked objectives
+            const linkedObjs = activity.getCellValue(activitiesLinkField?.id);
+            if (!linkedObjs || linkedObjs.length === 0) return null;
+
+            const objective = objectives.find(o => o.id === linkedObjs[0].id);
+            if (!objective) return null;
+
+            // Check direct link to workplan sources
+            const directLinked = objective.getCellValue(objectivesToSourcesLinkField?.id);
+            if (directLinked && directLinked.length > 0) {
+                return directLinked[0].id;
+            }
+
+            // Check through goals
+            const goalLinked = objective.getCellValue(objectivesLinkField?.id);
+            if (goalLinked && goalLinked.length > 0) {
+                const goal = goals.find(g => g.id === goalLinked[0].id);
+                if (goal) {
+                    const wsLinked = goal.getCellValue(goalsLinkField?.id);
+                    if (wsLinked && wsLinked.length > 0) {
+                        return wsLinked[0].id;
+                    }
+                }
+            }
+            return null;
+        }
+
+        default:
+            return null;
+    }
+};
+
+/**
  * Checks if a record is part of the Board Plan hierarchy
  * Returns the board plan workplan source ID if found, null otherwise
  */
@@ -34,7 +127,7 @@ const findBoardPlanSource = (
         case 'goal': {
             const goal = goals.find(g => g.id === recordId);
             if (!goal) return null;
-            
+
             const linked = goal.getCellValue(goalsLinkField?.id);
             if (!linked) return null;
 
