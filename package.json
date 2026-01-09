@@ -4,6 +4,7 @@
     },
     "dependencies": {
         "@airtable/blocks": "1.18.2",
+        "lz-string": "^1.5.0",
         "react": "^16.14.0",
         "react-dom": "^16.14.0"
     },

@@ -25929,7 +25929,7 @@ For more info, visit https://fb.me/react-mock-scheduler`);
           });
           var Prototype = Constructor.prototype;
           var getInternalState = internalStateGetterFor(CONSTRUCTOR_NAME);
-          var define = function(that, key, value) {
+          var define2 = function(that, key, value) {
             var state = getInternalState(that);
             var data = getWeakData(anObject(key), true);
             if (data === true) uncaughtFrozenStore(state).set(key, value);
@@ -25972,13 +25972,13 @@ For more info, visit https://fb.me/react-mock-scheduler`);
             // `WeakMap.prototype.set(key, value)` method
             // https://tc39.es/ecma262/#sec-weakmap.prototype.set
             set: function set(key, value) {
-              return define(this, key, value);
+              return define2(this, key, value);
             }
           } : {
             // `WeakSet.prototype.add(value)` method
             // https://tc39.es/ecma262/#sec-weakset.prototype.add
             add: function add(value) {
-              return define(this, value, true);
+              return define2(this, value, true);
             }
           });
           return Constructor;
@@ -27545,7 +27545,7 @@ For more info, visit https://fb.me/react-mock-scheduler`);
           });
           var Prototype = Constructor.prototype;
           var getInternalState = internalStateGetterFor(CONSTRUCTOR_NAME);
-          var define = function(that, key, value) {
+          var define2 = function(that, key, value) {
             var state = getInternalState(that);
             var entry = getEntry(that, key);
             var previous, index;
@@ -27645,13 +27645,13 @@ For more info, visit https://fb.me/react-mock-scheduler`);
             // `Map.prototype.set(key, value)` method
             // https://tc39.es/ecma262/#sec-map.prototype.set
             set: function set(key, value) {
-              return define(this, key === 0 ? 0 : key, value);
+              return define2(this, key === 0 ? 0 : key, value);
             }
           } : {
             // `Set.prototype.add(value)` method
             // https://tc39.es/ecma262/#sec-set.prototype.add
             add: function add(value) {
-              return define(this, value = value === 0 ? 0 : value, value);
+              return define2(this, value = value === 0 ? 0 : value, value);
             }
           });
           if (DESCRIPTORS) defineBuiltInAccessor(Prototype, "size", {
@@ -31324,7 +31324,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function(t2, e2, r2) {
           t2[e2] = r2.value;
         }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag";
-        function define(t2, e2, r2) {
+        function define2(t2, e2, r2) {
           return Object.defineProperty(t2, e2, {
             value: r2,
             enumerable: true,
@@ -31333,9 +31333,9 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           }), t2[e2];
         }
         try {
-          define({}, "");
+          define2({}, "");
         } catch (t2) {
-          define = function define2(t3, e2, r2) {
+          define2 = function define3(t3, e2, r2) {
             return t3[e2] = r2;
           };
         }
@@ -31367,7 +31367,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         function GeneratorFunctionPrototype() {
         }
         var p = {};
-        define(p, a, function() {
+        define2(p, a, function() {
           return this;
         });
         var d = Object.getPrototypeOf, v = d && d(d(values([])));
@@ -31375,7 +31375,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p);
         function defineIteratorMethods(t2) {
           ["next", "throw", "return"].forEach(function(e2) {
-            define(t2, e2, function(t3) {
+            define2(t2, e2, function(t3) {
               return this._invoke(e2, t3);
             });
           });
@@ -31491,16 +31491,16 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         }), o(GeneratorFunctionPrototype, "constructor", {
           value: GeneratorFunction,
           configurable: true
-        }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function(t2) {
+        }), GeneratorFunction.displayName = define2(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function(t2) {
           var e2 = "function" == typeof t2 && t2.constructor;
           return !!e2 && (e2 === GeneratorFunction || "GeneratorFunction" === (e2.displayName || e2.name));
         }, e.mark = function(t2) {
-          return Object.setPrototypeOf ? Object.setPrototypeOf(t2, GeneratorFunctionPrototype) : (t2.__proto__ = GeneratorFunctionPrototype, define(t2, u, "GeneratorFunction")), t2.prototype = Object.create(g), t2;
+          return Object.setPrototypeOf ? Object.setPrototypeOf(t2, GeneratorFunctionPrototype) : (t2.__proto__ = GeneratorFunctionPrototype, define2(t2, u, "GeneratorFunction")), t2.prototype = Object.create(g), t2;
         }, e.awrap = function(t2) {
           return {
             __await: t2
           };
-        }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function() {
+        }, defineIteratorMethods(AsyncIterator.prototype), define2(AsyncIterator.prototype, c, function() {
           return this;
         }), e.AsyncIterator = AsyncIterator, e.async = function(t2, r2, n2, o2, i2) {
           void 0 === i2 && (i2 = Promise);
@@ -31508,9 +31508,9 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           return e.isGeneratorFunction(r2) ? a2 : a2.next().then(function(t3) {
             return t3.done ? t3.value : a2.next();
           });
-        }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function() {
+        }, defineIteratorMethods(g), define2(g, u, "Generator"), define2(g, a, function() {
           return this;
-        }), define(g, "toString", function() {
+        }), define2(g, "toString", function() {
           return "[object Generator]";
         }), e.keys = function(t2) {
           var e2 = Object(t2), r2 = [];
@@ -61501,17 +61501,14 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         if (userEnd && actStart > userEnd) return false;
         return true;
       };
-      createRecordObject = (record, table, recordType) => {
+      createRecordObject = (record, table) => {
         return {
-          tableId: table.id,
-          recordId: record.id,
-          type: recordType,
-          recordName: getRecordName(record, table),
+          name: getRecordName(record, table),
           ttaSessions: [],
           children: []
         };
       };
-      createRecordObjectWithTTA = (record, table, recordType, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
+      createRecordObjectWithTTA = (record, table, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
         const ttaForRecord = ttaSessions.filter((session) => {
           const linked = session.getCellValue(ttaSessionsLinkField?.id);
           if (!linked || !linked.some((l) => l.id === record.id)) return false;
@@ -61525,20 +61522,16 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           if (userEnd && date > userEnd) return false;
           return true;
         });
-        const ttaData = ttaForRecord.sort((a, b) => {
+        const sessions = ttaForRecord.sort((a, b) => {
           const dateA = a.getCellValue(ttaDateField?.id);
           const dateB = b.getCellValue(ttaDateField?.id);
           return new Date(dateA) - new Date(dateB);
         }).map((session) => ({
-          id: session.id,
           summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ""
         }));
         return {
-          tableId: table.id,
-          recordId: record.id,
-          type: recordType,
-          recordName: getRecordName(record, table),
-          ttaSessions: ttaData,
+          name: getRecordName(record, table),
+          sessions,
           children: []
         };
       };
@@ -61546,12 +61539,9 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
         const comments = activity.getCellValueAsString(commentsFieldId) || "";
         const status = activity.getCellValueAsString(statusFieldId) || "";
         return {
-          tableId: activitiesTable.id,
-          recordId: activity.id,
-          type: "activity",
-          recordName: getRecordName(activity, activitiesTable),
-          activityComments: comments,
-          activityStatus: status,
+          name: getRecordName(activity, activitiesTable),
+          comments,
+          status,
           children: []
         };
       };
@@ -61650,20 +61640,20 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           case "workplanSource": {
             const topRecord = workplanSources.find((ws) => ws.id === topLevelId);
             if (!topRecord) return null;
-            root = createRecordObject(topRecord, workplanSourcesTable, "workplanSource");
+            root = createRecordObject(topRecord, workplanSourcesTable);
             const linkedGoals = goals.filter((goal) => {
               const linked = goal.getCellValue(goalsLinkField?.id);
               return linked && linked.some((l) => l.id === topLevelId);
             });
             if (linkedGoals.length > 0) {
               for (const goal of linkedGoals) {
-                const goalObj = createRecordObject(goal, goalsTable, "goal");
+                const goalObj = createRecordObject(goal, goalsTable);
                 const linkedObjectives = objectives.filter((obj) => {
                   const linked = obj.getCellValue(objectivesLinkField?.id);
                   return linked && linked.some((l) => l.id === goal.id);
                 });
                 for (const objective of linkedObjectives) {
-                  const objObj = createRecordObject(objective, objectivesTable, "objective");
+                  const objObj = createRecordObject(objective, objectivesTable);
                   const linkedActivities = activities.filter((activity) => {
                     const linked = activity.getCellValue(activitiesLinkField?.id);
                     return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
@@ -61673,7 +61663,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                     if (isBoardPlan) {
                       actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
                     } else {
-                      actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                      actObj = createRecordObjectWithTTA(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                     }
                     objObj.children.push(actObj);
                   }
@@ -61687,7 +61677,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                 return linked && linked.some((l) => l.id === topLevelId);
               });
               for (const objective of linkedObjectives) {
-                const objObj = createRecordObject(objective, objectivesTable, "objective");
+                const objObj = createRecordObject(objective, objectivesTable);
                 const linkedActivities = activities.filter((activity) => {
                   const linked = activity.getCellValue(activitiesLinkField?.id);
                   return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
@@ -61697,7 +61687,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                   if (isBoardPlan) {
                     actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
                   } else {
-                    actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    actObj = createRecordObjectWithTTA(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                   }
                   objObj.children.push(actObj);
                 }
@@ -61709,13 +61699,13 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           case "goal": {
             const topRecord = goals.find((g) => g.id === topLevelId);
             if (!topRecord) return null;
-            root = createRecordObject(topRecord, goalsTable, "goal");
+            root = createRecordObject(topRecord, goalsTable);
             const linkedObjectives = objectives.filter((obj) => {
               const linked = obj.getCellValue(objectivesLinkField?.id);
               return linked && linked.some((l) => l.id === topLevelId);
             });
             for (const objective of linkedObjectives) {
-              const objObj = createRecordObject(objective, objectivesTable, "objective");
+              const objObj = createRecordObject(objective, objectivesTable);
               const linkedActivities = activities.filter((activity) => {
                 const linked = activity.getCellValue(activitiesLinkField?.id);
                 return linked && linked.some((l) => l.id === objective.id) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
@@ -61725,7 +61715,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
                 if (isBoardPlan) {
                   actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
                 } else {
-                  actObj = createRecordObjectWithTTA(activity, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                  actObj = createRecordObjectWithTTA(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                 }
                 objObj.children.push(actObj);
               }
@@ -61736,7 +61726,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           case "objective": {
             const topRecord = objectives.find((o) => o.id === topLevelId);
             if (!topRecord) return null;
-            root = createRecordObject(topRecord, objectivesTable, "objective");
+            root = createRecordObject(topRecord, objectivesTable);
             const linkedActivities = activities.filter((activity) => {
               const linked = activity.getCellValue(activitiesLinkField?.id);
               return linked && linked.some((l) => l.id === topLevelId) && isActivityInDateRange(activity, startDate, endDate, activitiesStartDateField, activitiesEndDateField);
@@ -61759,7 +61749,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
               if (isBoardPlan) {
                 return createActivityObjectWithDetails(topRecord, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
               } else {
-                return createRecordObjectWithTTA(topRecord, activitiesTable, "activity", ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                return createRecordObjectWithTTA(topRecord, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
               }
             }
             return null;
@@ -63041,6 +63031,462 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     }
   });
 
+  // node_modules/lz-string/libs/lz-string.js
+  var require_lz_string = __commonJS({
+    "node_modules/lz-string/libs/lz-string.js"(exports, module) {
+      var LZString2 = (function() {
+        var f = String.fromCharCode;
+        var keyStrBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var keyStrUriSafe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$";
+        var baseReverseDic = {};
+        function getBaseValue(alphabet, character) {
+          if (!baseReverseDic[alphabet]) {
+            baseReverseDic[alphabet] = {};
+            for (var i = 0; i < alphabet.length; i++) {
+              baseReverseDic[alphabet][alphabet.charAt(i)] = i;
+            }
+          }
+          return baseReverseDic[alphabet][character];
+        }
+        var LZString3 = {
+          compressToBase64: function(input) {
+            if (input == null) return "";
+            var res = LZString3._compress(input, 6, function(a) {
+              return keyStrBase64.charAt(a);
+            });
+            switch (res.length % 4) {
+              // To produce valid Base64
+              default:
+              // When could this happen ?
+              case 0:
+                return res;
+              case 1:
+                return res + "===";
+              case 2:
+                return res + "==";
+              case 3:
+                return res + "=";
+            }
+          },
+          decompressFromBase64: function(input) {
+            if (input == null) return "";
+            if (input == "") return null;
+            return LZString3._decompress(input.length, 32, function(index) {
+              return getBaseValue(keyStrBase64, input.charAt(index));
+            });
+          },
+          compressToUTF16: function(input) {
+            if (input == null) return "";
+            return LZString3._compress(input, 15, function(a) {
+              return f(a + 32);
+            }) + " ";
+          },
+          decompressFromUTF16: function(compressed) {
+            if (compressed == null) return "";
+            if (compressed == "") return null;
+            return LZString3._decompress(compressed.length, 16384, function(index) {
+              return compressed.charCodeAt(index) - 32;
+            });
+          },
+          //compress into uint8array (UCS-2 big endian format)
+          compressToUint8Array: function(uncompressed) {
+            var compressed = LZString3.compress(uncompressed);
+            var buf = new Uint8Array(compressed.length * 2);
+            for (var i = 0, TotalLen = compressed.length; i < TotalLen; i++) {
+              var current_value = compressed.charCodeAt(i);
+              buf[i * 2] = current_value >>> 8;
+              buf[i * 2 + 1] = current_value % 256;
+            }
+            return buf;
+          },
+          //decompress from uint8array (UCS-2 big endian format)
+          decompressFromUint8Array: function(compressed) {
+            if (compressed === null || compressed === void 0) {
+              return LZString3.decompress(compressed);
+            } else {
+              var buf = new Array(compressed.length / 2);
+              for (var i = 0, TotalLen = buf.length; i < TotalLen; i++) {
+                buf[i] = compressed[i * 2] * 256 + compressed[i * 2 + 1];
+              }
+              var result = [];
+              buf.forEach(function(c) {
+                result.push(f(c));
+              });
+              return LZString3.decompress(result.join(""));
+            }
+          },
+          //compress into a string that is already URI encoded
+          compressToEncodedURIComponent: function(input) {
+            if (input == null) return "";
+            return LZString3._compress(input, 6, function(a) {
+              return keyStrUriSafe.charAt(a);
+            });
+          },
+          //decompress from an output of compressToEncodedURIComponent
+          decompressFromEncodedURIComponent: function(input) {
+            if (input == null) return "";
+            if (input == "") return null;
+            input = input.replace(/ /g, "+");
+            return LZString3._decompress(input.length, 32, function(index) {
+              return getBaseValue(keyStrUriSafe, input.charAt(index));
+            });
+          },
+          compress: function(uncompressed) {
+            return LZString3._compress(uncompressed, 16, function(a) {
+              return f(a);
+            });
+          },
+          _compress: function(uncompressed, bitsPerChar, getCharFromInt) {
+            if (uncompressed == null) return "";
+            var i, value, context_dictionary = {}, context_dictionaryToCreate = {}, context_c = "", context_wc = "", context_w = "", context_enlargeIn = 2, context_dictSize = 3, context_numBits = 2, context_data = [], context_data_val = 0, context_data_position = 0, ii;
+            for (ii = 0; ii < uncompressed.length; ii += 1) {
+              context_c = uncompressed.charAt(ii);
+              if (!Object.prototype.hasOwnProperty.call(context_dictionary, context_c)) {
+                context_dictionary[context_c] = context_dictSize++;
+                context_dictionaryToCreate[context_c] = true;
+              }
+              context_wc = context_w + context_c;
+              if (Object.prototype.hasOwnProperty.call(context_dictionary, context_wc)) {
+                context_w = context_wc;
+              } else {
+                if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate, context_w)) {
+                  if (context_w.charCodeAt(0) < 256) {
+                    for (i = 0; i < context_numBits; i++) {
+                      context_data_val = context_data_val << 1;
+                      if (context_data_position == bitsPerChar - 1) {
+                        context_data_position = 0;
+                        context_data.push(getCharFromInt(context_data_val));
+                        context_data_val = 0;
+                      } else {
+                        context_data_position++;
+                      }
+                    }
+                    value = context_w.charCodeAt(0);
+                    for (i = 0; i < 8; i++) {
+                      context_data_val = context_data_val << 1 | value & 1;
+                      if (context_data_position == bitsPerChar - 1) {
+                        context_data_position = 0;
+                        context_data.push(getCharFromInt(context_data_val));
+                        context_data_val = 0;
+                      } else {
+                        context_data_position++;
+                      }
+                      value = value >> 1;
+                    }
+                  } else {
+                    value = 1;
+                    for (i = 0; i < context_numBits; i++) {
+                      context_data_val = context_data_val << 1 | value;
+                      if (context_data_position == bitsPerChar - 1) {
+                        context_data_position = 0;
+                        context_data.push(getCharFromInt(context_data_val));
+                        context_data_val = 0;
+                      } else {
+                        context_data_position++;
+                      }
+                      value = 0;
+                    }
+                    value = context_w.charCodeAt(0);
+                    for (i = 0; i < 16; i++) {
+                      context_data_val = context_data_val << 1 | value & 1;
+                      if (context_data_position == bitsPerChar - 1) {
+                        context_data_position = 0;
+                        context_data.push(getCharFromInt(context_data_val));
+                        context_data_val = 0;
+                      } else {
+                        context_data_position++;
+                      }
+                      value = value >> 1;
+                    }
+                  }
+                  context_enlargeIn--;
+                  if (context_enlargeIn == 0) {
+                    context_enlargeIn = Math.pow(2, context_numBits);
+                    context_numBits++;
+                  }
+                  delete context_dictionaryToCreate[context_w];
+                } else {
+                  value = context_dictionary[context_w];
+                  for (i = 0; i < context_numBits; i++) {
+                    context_data_val = context_data_val << 1 | value & 1;
+                    if (context_data_position == bitsPerChar - 1) {
+                      context_data_position = 0;
+                      context_data.push(getCharFromInt(context_data_val));
+                      context_data_val = 0;
+                    } else {
+                      context_data_position++;
+                    }
+                    value = value >> 1;
+                  }
+                }
+                context_enlargeIn--;
+                if (context_enlargeIn == 0) {
+                  context_enlargeIn = Math.pow(2, context_numBits);
+                  context_numBits++;
+                }
+                context_dictionary[context_wc] = context_dictSize++;
+                context_w = String(context_c);
+              }
+            }
+            if (context_w !== "") {
+              if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate, context_w)) {
+                if (context_w.charCodeAt(0) < 256) {
+                  for (i = 0; i < context_numBits; i++) {
+                    context_data_val = context_data_val << 1;
+                    if (context_data_position == bitsPerChar - 1) {
+                      context_data_position = 0;
+                      context_data.push(getCharFromInt(context_data_val));
+                      context_data_val = 0;
+                    } else {
+                      context_data_position++;
+                    }
+                  }
+                  value = context_w.charCodeAt(0);
+                  for (i = 0; i < 8; i++) {
+                    context_data_val = context_data_val << 1 | value & 1;
+                    if (context_data_position == bitsPerChar - 1) {
+                      context_data_position = 0;
+                      context_data.push(getCharFromInt(context_data_val));
+                      context_data_val = 0;
+                    } else {
+                      context_data_position++;
+                    }
+                    value = value >> 1;
+                  }
+                } else {
+                  value = 1;
+                  for (i = 0; i < context_numBits; i++) {
+                    context_data_val = context_data_val << 1 | value;
+                    if (context_data_position == bitsPerChar - 1) {
+                      context_data_position = 0;
+                      context_data.push(getCharFromInt(context_data_val));
+                      context_data_val = 0;
+                    } else {
+                      context_data_position++;
+                    }
+                    value = 0;
+                  }
+                  value = context_w.charCodeAt(0);
+                  for (i = 0; i < 16; i++) {
+                    context_data_val = context_data_val << 1 | value & 1;
+                    if (context_data_position == bitsPerChar - 1) {
+                      context_data_position = 0;
+                      context_data.push(getCharFromInt(context_data_val));
+                      context_data_val = 0;
+                    } else {
+                      context_data_position++;
+                    }
+                    value = value >> 1;
+                  }
+                }
+                context_enlargeIn--;
+                if (context_enlargeIn == 0) {
+                  context_enlargeIn = Math.pow(2, context_numBits);
+                  context_numBits++;
+                }
+                delete context_dictionaryToCreate[context_w];
+              } else {
+                value = context_dictionary[context_w];
+                for (i = 0; i < context_numBits; i++) {
+                  context_data_val = context_data_val << 1 | value & 1;
+                  if (context_data_position == bitsPerChar - 1) {
+                    context_data_position = 0;
+                    context_data.push(getCharFromInt(context_data_val));
+                    context_data_val = 0;
+                  } else {
+                    context_data_position++;
+                  }
+                  value = value >> 1;
+                }
+              }
+              context_enlargeIn--;
+              if (context_enlargeIn == 0) {
+                context_enlargeIn = Math.pow(2, context_numBits);
+                context_numBits++;
+              }
+            }
+            value = 2;
+            for (i = 0; i < context_numBits; i++) {
+              context_data_val = context_data_val << 1 | value & 1;
+              if (context_data_position == bitsPerChar - 1) {
+                context_data_position = 0;
+                context_data.push(getCharFromInt(context_data_val));
+                context_data_val = 0;
+              } else {
+                context_data_position++;
+              }
+              value = value >> 1;
+            }
+            while (true) {
+              context_data_val = context_data_val << 1;
+              if (context_data_position == bitsPerChar - 1) {
+                context_data.push(getCharFromInt(context_data_val));
+                break;
+              } else context_data_position++;
+            }
+            return context_data.join("");
+          },
+          decompress: function(compressed) {
+            if (compressed == null) return "";
+            if (compressed == "") return null;
+            return LZString3._decompress(compressed.length, 32768, function(index) {
+              return compressed.charCodeAt(index);
+            });
+          },
+          _decompress: function(length, resetValue, getNextValue) {
+            var dictionary = [], next, enlargeIn = 4, dictSize = 4, numBits = 3, entry = "", result = [], i, w, bits, resb, maxpower, power, c, data = { val: getNextValue(0), position: resetValue, index: 1 };
+            for (i = 0; i < 3; i += 1) {
+              dictionary[i] = i;
+            }
+            bits = 0;
+            maxpower = Math.pow(2, 2);
+            power = 1;
+            while (power != maxpower) {
+              resb = data.val & data.position;
+              data.position >>= 1;
+              if (data.position == 0) {
+                data.position = resetValue;
+                data.val = getNextValue(data.index++);
+              }
+              bits |= (resb > 0 ? 1 : 0) * power;
+              power <<= 1;
+            }
+            switch (next = bits) {
+              case 0:
+                bits = 0;
+                maxpower = Math.pow(2, 8);
+                power = 1;
+                while (power != maxpower) {
+                  resb = data.val & data.position;
+                  data.position >>= 1;
+                  if (data.position == 0) {
+                    data.position = resetValue;
+                    data.val = getNextValue(data.index++);
+                  }
+                  bits |= (resb > 0 ? 1 : 0) * power;
+                  power <<= 1;
+                }
+                c = f(bits);
+                break;
+              case 1:
+                bits = 0;
+                maxpower = Math.pow(2, 16);
+                power = 1;
+                while (power != maxpower) {
+                  resb = data.val & data.position;
+                  data.position >>= 1;
+                  if (data.position == 0) {
+                    data.position = resetValue;
+                    data.val = getNextValue(data.index++);
+                  }
+                  bits |= (resb > 0 ? 1 : 0) * power;
+                  power <<= 1;
+                }
+                c = f(bits);
+                break;
+              case 2:
+                return "";
+            }
+            dictionary[3] = c;
+            w = c;
+            result.push(c);
+            while (true) {
+              if (data.index > length) {
+                return "";
+              }
+              bits = 0;
+              maxpower = Math.pow(2, numBits);
+              power = 1;
+              while (power != maxpower) {
+                resb = data.val & data.position;
+                data.position >>= 1;
+                if (data.position == 0) {
+                  data.position = resetValue;
+                  data.val = getNextValue(data.index++);
+                }
+                bits |= (resb > 0 ? 1 : 0) * power;
+                power <<= 1;
+              }
+              switch (c = bits) {
+                case 0:
+                  bits = 0;
+                  maxpower = Math.pow(2, 8);
+                  power = 1;
+                  while (power != maxpower) {
+                    resb = data.val & data.position;
+                    data.position >>= 1;
+                    if (data.position == 0) {
+                      data.position = resetValue;
+                      data.val = getNextValue(data.index++);
+                    }
+                    bits |= (resb > 0 ? 1 : 0) * power;
+                    power <<= 1;
+                  }
+                  dictionary[dictSize++] = f(bits);
+                  c = dictSize - 1;
+                  enlargeIn--;
+                  break;
+                case 1:
+                  bits = 0;
+                  maxpower = Math.pow(2, 16);
+                  power = 1;
+                  while (power != maxpower) {
+                    resb = data.val & data.position;
+                    data.position >>= 1;
+                    if (data.position == 0) {
+                      data.position = resetValue;
+                      data.val = getNextValue(data.index++);
+                    }
+                    bits |= (resb > 0 ? 1 : 0) * power;
+                    power <<= 1;
+                  }
+                  dictionary[dictSize++] = f(bits);
+                  c = dictSize - 1;
+                  enlargeIn--;
+                  break;
+                case 2:
+                  return result.join("");
+              }
+              if (enlargeIn == 0) {
+                enlargeIn = Math.pow(2, numBits);
+                numBits++;
+              }
+              if (dictionary[c]) {
+                entry = dictionary[c];
+              } else {
+                if (c === dictSize) {
+                  entry = w + w.charAt(0);
+                } else {
+                  return null;
+                }
+              }
+              result.push(entry);
+              dictionary[dictSize++] = w + entry.charAt(0);
+              enlargeIn--;
+              w = entry;
+              if (enlargeIn == 0) {
+                enlargeIn = Math.pow(2, numBits);
+                numBits++;
+              }
+            }
+          }
+        };
+        return LZString3;
+      })();
+      if (typeof define === "function" && define.amd) {
+        define(function() {
+          return LZString2;
+        });
+      } else if (typeof module !== "undefined" && module != null) {
+        module.exports = LZString2;
+      } else if (typeof angular !== "undefined" && angular != null) {
+        angular.module("LZString", []).factory("LZString", function() {
+          return LZString2;
+        });
+      }
+    }
+  });
+
   // frontend/index.js
   var frontend_exports = {};
   function ReportSelectorApp() {
@@ -63058,6 +63504,8 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
     const [parsedSections, setParsedSections] = (0, import_react2.useState)([]);
     const [debugJsonOutput, setDebugJsonOutput] = (0, import_react2.useState)("");
     const [jsonCharacterCount, setJsonCharacterCount] = (0, import_react2.useState)(0);
+    const [testMode, setTestMode] = (0, import_react2.useState)(false);
+    const [compressionStats, setCompressionStats] = (0, import_react2.useState)(null);
     const dropdownRef = (0, import_react2.useRef)(null);
     (0, import_react2.useEffect)(() => {
       const handleClickOutside = (event) => {
@@ -63272,6 +63720,12 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
       JSON_2: "fld82DDMxKyvcHfFC",
       JSON_3: "fldslV70JJFdWp0vZ",
       JSON_4: "fldpNrAVFWSSzkSIW",
+      JSON_5: "fld4uwb25tiZjaMCZ",
+      JSON_6: "fldbioPfnHpDc4DPx",
+      JSON_7: "fldKiOt3kCnxoaXbm",
+      JSON_8: "fldQqp2JFuRtwPGAo",
+      JSON_9: "fld9hdcMbEvnknYyv",
+      JSON_10: "fld4kBVPt9czzqeCb",
       START_DATE: "fldf7QFdRUZvFxrj3",
       END_DATE: "fldL9Ddrp8RrAdFax",
       STATUS: "fldXhj8L8HcYZ5V7p",
@@ -63314,11 +63768,15 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           "fld6Cro64lmv8jrd3"
           // Activity Status field (for Board Plan)
         );
-        const jsonOutput = JSON.stringify(hierarchicalRecords, null, 2);
+        const condensedRecords = hierarchicalRecords;
+        const jsonOutput = JSON.stringify(condensedRecords);
         const characterCount = jsonOutput.length;
-        console.log("Hierarchical Records JSON length:", characterCount);
+        const prettyJson = JSON.stringify(hierarchicalRecords, null, 2);
+        console.log("Original JSON length:", prettyJson.length);
+        console.log("Condensed JSON length:", characterCount);
+        console.log("Reduction:", Math.round((1 - characterCount / prettyJson.length) * 100) + "%");
         console.log("OUTPUT:", jsonOutput);
-        setDebugJsonOutput(jsonOutput);
+        setDebugJsonOutput(prettyJson);
         setJsonCharacterCount(characterCount);
         const reportsTable = base.getTableById(REPORTS_TABLE_ID);
         if (!reportsTable) {
@@ -63326,13 +63784,35 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_liter
           setIsGenerating(false);
           return;
         }
-        console.log("Splitting JSON across multiple Long Text fields...");
+        console.log("Compressing JSON with LZString...");
+        const compressedJson = import_lz_string.default.compressToBase64(jsonOutput);
+        const compressedLength = compressedJson.length;
+        const compressionRatio = ((1 - compressedLength / characterCount) * 100).toFixed(1);
+        console.log(`Original JSON: ${characterCount} characters`);
+        console.log(`Compressed: ${compressedLength} characters`);
+        console.log(`Compression ratio: ${compressionRatio}% reduction`);
         const FIELD_LIMIT = 1e5;
-        const MAX_FIELDS = 4;
+        const MAX_FIELDS = 10;
         const MAX_TOTAL = FIELD_LIMIT * MAX_FIELDS;
-        if (characterCount > MAX_TOTAL) {
-          console.error(`JSON too large: ${characterCount} characters (limit: ${MAX_TOTAL})`);
-          alert(`The report data is too large (${Math.round(characterCount / 1e3)}KB, limit is ${MAX_TOTAL / 1e3}KB).
+        const chunksNeeded = Math.ceil(compressedLength / FIELD_LIMIT);
+        if (testMode) {
+          setCompressionStats({
+            originalSize: characterCount,
+            compressedSize: compressedLength,
+            compressionRatio,
+            chunksNeeded,
+            fieldsAvailable: MAX_FIELDS,
+            withinLimit: compressedLength <= MAX_TOTAL
+          });
+          setIsGenerating(false);
+          return;
+        }
+        if (compressedLength > MAX_TOTAL) {
+          console.error(`Compressed JSON too large: ${compressedLength} characters (limit: ${MAX_TOTAL})`);
+          alert(`The report data is too large even after compression (${Math.round(compressedLength / 1e3)}KB compressed, limit is ${MAX_TOTAL / 1e3}KB).
+
+Original size: ${Math.round(characterCount / 1e3)}KB
+Compressed size: ${Math.round(compressedLength / 1e3)}KB (${compressionRatio}% reduction)
 
 Please:
 1. Select a smaller date range
@@ -63343,10 +63823,10 @@ Please:
         }
         try {
           const chunks = [];
-          for (let i = 0; i < jsonOutput.length; i += FIELD_LIMIT) {
-            chunks.push(jsonOutput.substring(i, i + FIELD_LIMIT));
+          for (let i = 0; i < compressedJson.length; i += FIELD_LIMIT) {
+            chunks.push(compressedJson.substring(i, i + FIELD_LIMIT));
           }
-          console.log(`Created ${chunks.length} chunk(s)`);
+          console.log(`Created ${chunks.length} chunk(s) from compressed data`);
           chunks.forEach((chunk, i) => {
             console.log(`  Chunk ${i + 1}: ${chunk.length} characters`);
           });
@@ -63368,6 +63848,12 @@ Please:
           if (chunks.length > 1) fields[REPORT_FIELDS.JSON_2] = chunks[1];
           if (chunks.length > 2) fields[REPORT_FIELDS.JSON_3] = chunks[2];
           if (chunks.length > 3) fields[REPORT_FIELDS.JSON_4] = chunks[3];
+          if (chunks.length > 4) fields[REPORT_FIELDS.JSON_5] = chunks[4];
+          if (chunks.length > 5) fields[REPORT_FIELDS.JSON_6] = chunks[5];
+          if (chunks.length > 6) fields[REPORT_FIELDS.JSON_7] = chunks[6];
+          if (chunks.length > 7) fields[REPORT_FIELDS.JSON_8] = chunks[7];
+          if (chunks.length > 8) fields[REPORT_FIELDS.JSON_9] = chunks[8];
+          if (chunks.length > 9) fields[REPORT_FIELDS.JSON_10] = chunks[9];
           if (startDate) {
             fields[REPORT_FIELDS.START_DATE] = startDate;
           }
@@ -63434,60 +63920,60 @@ Please:
       return /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { padding: 3, backgroundColor: "lightGray1", children: [
         /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "large", children: "Configuration Needed" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 571,
+          lineNumber: 624,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { marginTop: 2, children: "Please ensure your base has these tables with these exact names:" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 572,
+          lineNumber: 625,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { marginTop: 2, children: [
           /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { children: "\u2022 Workplan Sources" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 576,
+            lineNumber: 629,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { children: "\u2022 Goals" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 577,
+            lineNumber: 630,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { children: "\u2022 Objectives" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 578,
+            lineNumber: 631,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { children: "\u2022 Activities" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 579,
+            lineNumber: 632,
             columnNumber: 21
           }, this),
           /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { children: "\u2022 T/TA Sessions" }, void 0, false, {
             fileName: "frontend/index.js",
-            lineNumber: 580,
+            lineNumber: 633,
             columnNumber: 21
           }, this)
         ] }, void 0, true, {
           fileName: "frontend/index.js",
-          lineNumber: 575,
+          lineNumber: 628,
           columnNumber: 17
         }, this),
         /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { marginTop: 2, textColor: "light", children: "(Or update the table names in the code)" }, void 0, false, {
           fileName: "frontend/index.js",
-          lineNumber: 582,
+          lineNumber: 635,
           columnNumber: 17
         }, this)
       ] }, void 0, true, {
         fileName: "frontend/index.js",
-        lineNumber: 570,
+        lineNumber: 623,
         columnNumber: 13
       }, this);
     }
     return /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { padding: 3, backgroundColor: "lightGray1", minHeight: "100vh", display: "flex", justifyContent: "center", children: /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { maxWidth: "800px", width: "100%", children: [
       /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "xlarge", marginBottom: 3, children: "Work Report Selector" }, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 592,
+        lineNumber: 645,
         columnNumber: 17
       }, this),
       /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
@@ -63502,13 +63988,13 @@ Please:
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "small", marginBottom: 3, children: "What should the report cover?" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 603,
+              lineNumber: 656,
               columnNumber: 17
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Generate a report about:" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 607,
+                lineNumber: 660,
                 columnNumber: 21
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", flexDirection: "column", children: [
@@ -63532,7 +64018,7 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 616,
+                    lineNumber: 669,
                     columnNumber: 33
                   },
                   this
@@ -63548,23 +64034,23 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 625,
+                    lineNumber: 678,
                     columnNumber: 33
                   },
                   this
                 )
               ] }, option.value, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 615,
+                lineNumber: 668,
                 columnNumber: 29
               }, this)) }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 608,
+                lineNumber: 661,
                 columnNumber: 21
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 606,
+              lineNumber: 659,
               columnNumber: 17
             }, this),
             topLevel && /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", flexDirection: "row", gap: 3, marginBottom: 3, alignItems: "flex-end", children: [
@@ -63582,12 +64068,12 @@ Please:
                     children: [
                       /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { children: topLevelId ? filteredTopLevelOptions.find((opt) => opt.value === topLevelId)?.label || "Unknown" : `Select ${getReadableLabel(topLevel)}...` }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 651,
+                        lineNumber: 704,
                         columnNumber: 33
                       }, this),
                       /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Icon, { name: "caret", size: 16 }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 656,
+                        lineNumber: 709,
                         columnNumber: 33
                       }, this)
                     ]
@@ -63596,7 +64082,7 @@ Please:
                   true,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 642,
+                    lineNumber: 695,
                     columnNumber: 29
                   },
                   this
@@ -63628,13 +64114,13 @@ Please:
                         false,
                         {
                           fileName: "frontend/index.js",
-                          lineNumber: 674,
+                          lineNumber: 727,
                           columnNumber: 41
                         },
                         this
                       ) }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 673,
+                        lineNumber: 726,
                         columnNumber: 37
                       }, this),
                       filteredTopLevelOptions.length > 0 ? filteredTopLevelOptions.map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
@@ -63658,7 +64144,7 @@ Please:
                           },
                           children: /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { children: option.label }, void 0, false, {
                             fileName: "frontend/index.js",
-                            lineNumber: 706,
+                            lineNumber: 759,
                             columnNumber: 49
                           }, this)
                         },
@@ -63666,13 +64152,13 @@ Please:
                         false,
                         {
                           fileName: "frontend/index.js",
-                          lineNumber: 687,
+                          lineNumber: 740,
                           columnNumber: 45
                         },
                         this
                       )) : /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { padding: 2, textColor: "light", children: "No matches found" }, void 0, false, {
                         fileName: "frontend/index.js",
-                        lineNumber: 710,
+                        lineNumber: 763,
                         columnNumber: 41
                       }, this)
                     ]
@@ -63681,20 +64167,20 @@ Please:
                   true,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 661,
+                    lineNumber: 714,
                     columnNumber: 33
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 640,
+                lineNumber: 693,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", marginRight: "16px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Label, { htmlFor: "startDate", children: "Start Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 720,
+                  lineNumber: 773,
                   columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
@@ -63710,20 +64196,20 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 721,
+                    lineNumber: 774,
                     columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 719,
+                lineNumber: 772,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", flexDirection: "column", gap: 1, minWidth: "150px", children: [
                 /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Label, { htmlFor: "endDate", children: "End Date" }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 732,
+                  lineNumber: 785,
                   columnNumber: 29
                 }, this),
                 /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
@@ -63739,25 +64225,25 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 733,
+                    lineNumber: 786,
                     columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 731,
+                lineNumber: 784,
                 columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 638,
+              lineNumber: 691,
               columnNumber: 21
             }, this),
             topLevel && topLevelId && /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "small", marginBottom: 2, textColor: "light", children: "Show detail down to:" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 747,
+                lineNumber: 800,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", flexDirection: "column", gap: 2, children: getBottomLevelOptions().map((option) => /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", alignItems: "center", gap: 2, marginY: 2, children: [
@@ -63776,7 +64262,7 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 751,
+                    lineNumber: 804,
                     columnNumber: 37
                   },
                   this
@@ -63792,23 +64278,23 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 760,
+                    lineNumber: 813,
                     columnNumber: 37
                   },
                   this
                 )
               ] }, option.value, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 750,
+                lineNumber: 803,
                 columnNumber: 33
               }, this)) }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 748,
+                lineNumber: 801,
                 columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 746,
+              lineNumber: 799,
               columnNumber: 21
             }, this)
           ]
@@ -63817,7 +64303,7 @@ Please:
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 595,
+          lineNumber: 648,
           columnNumber: 17
         },
         this
@@ -63832,19 +64318,19 @@ Please:
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "small", marginBottom: 1, children: "Summary" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 781,
+              lineNumber: 834,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "large", children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)("strong", { children: filteredSessions.length }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 783,
+                lineNumber: 836,
                 columnNumber: 25
               }, this),
               " T/TA Sessions match your selection"
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 782,
+              lineNumber: 835,
               columnNumber: 21
             }, this),
             startDate && endDate && /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { marginTop: 1, textColor: "light", children: [
@@ -63854,8 +64340,48 @@ Please:
               new Date(endDate).toLocaleDateString()
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 786,
+              lineNumber: 839,
               columnNumber: 25
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", alignItems: "center", gap: 2, marginTop: 2, children: [
+              /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
+                "input",
+                {
+                  type: "checkbox",
+                  id: "testMode",
+                  checked: testMode,
+                  onChange: (e) => setTestMode(e.target.checked),
+                  style: { cursor: "pointer" }
+                },
+                void 0,
+                false,
+                {
+                  fileName: "frontend/index.js",
+                  lineNumber: 846,
+                  columnNumber: 25
+                },
+                this
+              ),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
+                "label",
+                {
+                  htmlFor: "testMode",
+                  style: { cursor: "pointer", marginBottom: 0, marginLeft: 8 },
+                  children: "Test mode (show compression stats only)"
+                },
+                void 0,
+                false,
+                {
+                  fileName: "frontend/index.js",
+                  lineNumber: 853,
+                  columnNumber: 25
+                },
+                this
+              )
+            ] }, void 0, true, {
+              fileName: "frontend/index.js",
+              lineNumber: 845,
+              columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
               import_ui2.Button,
@@ -63865,13 +64391,13 @@ Please:
                 marginTop: 2,
                 disabled: !topLevel || !topLevelId || !bottomLevel,
                 onClick: handleGenerateReport,
-                children: "Generate Report"
+                children: testMode ? "Test Compression" : "Generate Report"
               },
               void 0,
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 790,
+                lineNumber: 861,
                 columnNumber: 21
               },
               this
@@ -63882,7 +64408,133 @@ Please:
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 775,
+          lineNumber: 828,
+          columnNumber: 17
+        },
+        this
+      ),
+      compressionStats && !isGenerating && /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
+        import_ui2.Box,
+        {
+          backgroundColor: "white",
+          padding: 3,
+          borderRadius: "large",
+          border: "thick",
+          marginBottom: 3,
+          children: [
+            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "large", marginBottom: 3, children: "Compression Test Results" }, void 0, false, {
+              fileName: "frontend/index.js",
+              lineNumber: 882,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { backgroundColor: "lightGray1", padding: 3, borderRadius: "default", marginBottom: 2, children: [
+              /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "large", marginBottom: 2, children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)("strong", { children: "Original Size:" }, void 0, false, {
+                  fileName: "frontend/index.js",
+                  lineNumber: 886,
+                  columnNumber: 29
+                }, this),
+                " ",
+                compressionStats.originalSize.toLocaleString(),
+                " characters (",
+                Math.round(compressionStats.originalSize / 1e3),
+                "KB)"
+              ] }, void 0, true, {
+                fileName: "frontend/index.js",
+                lineNumber: 885,
+                columnNumber: 25
+              }, this),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "large", marginBottom: 2, children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)("strong", { children: "Compressed Size:" }, void 0, false, {
+                  fileName: "frontend/index.js",
+                  lineNumber: 889,
+                  columnNumber: 29
+                }, this),
+                " ",
+                compressionStats.compressedSize.toLocaleString(),
+                " characters (",
+                Math.round(compressionStats.compressedSize / 1e3),
+                "KB)"
+              ] }, void 0, true, {
+                fileName: "frontend/index.js",
+                lineNumber: 888,
+                columnNumber: 25
+              }, this),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "large", marginBottom: 2, children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)("strong", { children: "Compression Ratio:" }, void 0, false, {
+                  fileName: "frontend/index.js",
+                  lineNumber: 892,
+                  columnNumber: 29
+                }, this),
+                " ",
+                compressionStats.compressionRatio,
+                "% reduction"
+              ] }, void 0, true, {
+                fileName: "frontend/index.js",
+                lineNumber: 891,
+                columnNumber: 25
+              }, this),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "large", marginBottom: 2, children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)("strong", { children: "Fields Needed:" }, void 0, false, {
+                  fileName: "frontend/index.js",
+                  lineNumber: 895,
+                  columnNumber: 29
+                }, this),
+                " ",
+                compressionStats.chunksNeeded,
+                " of ",
+                compressionStats.fieldsAvailable,
+                " available"
+              ] }, void 0, true, {
+                fileName: "frontend/index.js",
+                lineNumber: 894,
+                columnNumber: 25
+              }, this),
+              /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "large", textColor: compressionStats.withinLimit ? "green" : "red", children: [
+                /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)("strong", { children: "Status:" }, void 0, false, {
+                  fileName: "frontend/index.js",
+                  lineNumber: 898,
+                  columnNumber: 29
+                }, this),
+                " ",
+                compressionStats.withinLimit ? "\u2713 Within limit" : "\u2717 Too large"
+              ] }, void 0, true, {
+                fileName: "frontend/index.js",
+                lineNumber: 897,
+                columnNumber: 25
+              }, this)
+            ] }, void 0, true, {
+              fileName: "frontend/index.js",
+              lineNumber: 884,
+              columnNumber: 21
+            }, this),
+            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
+              import_ui2.Button,
+              {
+                variant: "secondary",
+                size: "default",
+                onClick: () => {
+                  setCompressionStats(null);
+                  setDebugJsonOutput("");
+                },
+                children: "Clear Results"
+              },
+              void 0,
+              false,
+              {
+                fileName: "frontend/index.js",
+                lineNumber: 902,
+                columnNumber: 21
+              },
+              this
+            )
+          ]
+        },
+        void 0,
+        true,
+        {
+          fileName: "frontend/index.js",
+          lineNumber: 875,
           columnNumber: 17
         },
         this
@@ -63900,14 +64552,14 @@ Please:
           justifyContent: "center",
           minHeight: "200px",
           children: [
-            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "small", marginBottom: 2, children: "Generating Report..." }, void 0, false, {
+            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "small", marginBottom: 2, children: testMode ? "Testing Compression..." : "Generating Report..." }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 815,
+              lineNumber: 928,
               columnNumber: 21
             }, this),
-            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { marginBottom: 2, textColor: "light", children: "This may take a moment while the AI summarizes your data." }, void 0, false, {
+            /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { marginBottom: 2, textColor: "light", children: testMode ? "Analyzing data size and compression..." : "This may take a moment while the AI summarizes your data." }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 816,
+              lineNumber: 929,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
@@ -63926,7 +64578,7 @@ Please:
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 819,
+                lineNumber: 932,
                 columnNumber: 21
               },
               this
@@ -63938,7 +64590,7 @@ Please:
                         }
                     ` }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 829,
+              lineNumber: 942,
               columnNumber: 21
             }, this)
           ]
@@ -63947,7 +64599,7 @@ Please:
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 804,
+          lineNumber: 917,
           columnNumber: 17
         },
         this
@@ -63964,12 +64616,12 @@ Please:
           children: [
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "small", marginBottom: 2, children: "Debug: Hierarchical Records JSON" }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 848,
+              lineNumber: 961,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Text, { size: "small", children: debugJsonOutput }, void 0, false, {
               fileName: "frontend/index.js",
-              lineNumber: 849,
+              lineNumber: 962,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { marginTop: 2, children: [
@@ -63988,7 +64640,7 @@ Please:
                 false,
                 {
                   fileName: "frontend/index.js",
-                  lineNumber: 851,
+                  lineNumber: 964,
                   columnNumber: 25
                 },
                 this
@@ -64010,14 +64662,14 @@ Please:
                 false,
                 {
                   fileName: "frontend/index.js",
-                  lineNumber: 861,
+                  lineNumber: 974,
                   columnNumber: 25
                 },
                 this
               )
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 850,
+              lineNumber: 963,
               columnNumber: 21
             }, this)
           ]
@@ -64026,7 +64678,7 @@ Please:
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 840,
+          lineNumber: 953,
           columnNumber: 17
         },
         this
@@ -64043,7 +64695,7 @@ Please:
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3, children: [
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Heading, { size: "large", children: "Generated Report" }, void 0, false, {
                 fileName: "frontend/index.js",
-                lineNumber: 887,
+                lineNumber: 1e3,
                 columnNumber: 25
               }, this),
               /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(import_ui2.Box, { display: "flex", gap: 2, children: [
@@ -64063,7 +64715,7 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 889,
+                    lineNumber: 1002,
                     columnNumber: 29
                   },
                   this
@@ -64084,19 +64736,19 @@ Please:
                   false,
                   {
                     fileName: "frontend/index.js",
-                    lineNumber: 900,
+                    lineNumber: 1013,
                     columnNumber: 29
                   },
                   this
                 )
               ] }, void 0, true, {
                 fileName: "frontend/index.js",
-                lineNumber: 888,
+                lineNumber: 1001,
                 columnNumber: 25
               }, this)
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 886,
+              lineNumber: 999,
               columnNumber: 21
             }, this),
             /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(
@@ -64109,7 +64761,7 @@ Please:
                 borderRadius: "default",
                 children: /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(ReportRenderer, { sections: parsedSections }, void 0, false, {
                   fileName: "frontend/index.js",
-                  lineNumber: 922,
+                  lineNumber: 1035,
                   columnNumber: 25
                 }, this)
               },
@@ -64117,7 +64769,7 @@ Please:
               false,
               {
                 fileName: "frontend/index.js",
-                lineNumber: 915,
+                lineNumber: 1028,
                 columnNumber: 21
               },
               this
@@ -64138,7 +64790,7 @@ Please:
                 false,
                 {
                   fileName: "frontend/index.js",
-                  lineNumber: 927,
+                  lineNumber: 1040,
                   columnNumber: 25
                 },
                 this
@@ -64160,14 +64812,14 @@ Please:
                 false,
                 {
                   fileName: "frontend/index.js",
-                  lineNumber: 937,
+                  lineNumber: 1050,
                   columnNumber: 25
                 },
                 this
               )
             ] }, void 0, true, {
               fileName: "frontend/index.js",
-              lineNumber: 926,
+              lineNumber: 1039,
               columnNumber: 21
             }, this)
           ]
@@ -64176,22 +64828,22 @@ Please:
         true,
         {
           fileName: "frontend/index.js",
-          lineNumber: 879,
+          lineNumber: 992,
           columnNumber: 17
         },
         this
       )
     ] }, void 0, true, {
       fileName: "frontend/index.js",
-      lineNumber: 591,
+      lineNumber: 644,
       columnNumber: 13
     }, this) }, void 0, false, {
       fileName: "frontend/index.js",
-      lineNumber: 590,
+      lineNumber: 643,
       columnNumber: 9
     }, this);
   }
-  var import_ui2, import_react2, import_jsx_dev_runtime2, getReadableLabel, fuzzyMatch;
+  var import_ui2, import_react2, import_lz_string, import_jsx_dev_runtime2, getReadableLabel, fuzzyMatch;
   var init_frontend = __esm({
     "frontend/index.js"() {
       import_ui2 = __toESM(require_ui2());
@@ -64200,6 +64852,7 @@ Please:
       init_markdownParser();
       init_ReportRenderer();
       init_wordExport();
+      import_lz_string = __toESM(require_lz_string());
       import_jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime());
       getReadableLabel = (value) => {
         const labelMap = {
@@ -64229,7 +64882,7 @@ Please:
       };
       (0, import_ui2.initializeBlock)(() => /* @__PURE__ */ (0, import_jsx_dev_runtime2.jsxDEV)(ReportSelectorApp, {}, void 0, false, {
         fileName: "frontend/index.js",
-        lineNumber: 957,
+        lineNumber: 1070,
         columnNumber: 23
       }));
     }

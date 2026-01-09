@@ -208,13 +208,11 @@ const isActivityInDateRange = (activity, startDate, endDate, startDateField, end
 
 /**
  * Helper function to create a record object (without T/TA sessions or activity details)
+ * Only includes fields needed for AI summarization
  */
-const createRecordObject = (record, table, recordType) => {
+const createRecordObject = (record, table) => {
     return {
-        tableId: table.id,
-        recordId: record.id,
-        type: recordType,
-        recordName: getRecordName(record, table),
+        name: getRecordName(record, table),
         ttaSessions: [],
         children: []
     };
@@ -223,7 +221,7 @@ const createRecordObject = (record, table, recordType) => {
 /**
  * Helper function to create a record object with T/TA sessions (for non-Board Plan)
  */
-const createRecordObjectWithTTA = (record, table, recordType, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
+const createRecordObjectWithTTA = (record, table, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId) => {
     const ttaForRecord = ttaSessions.filter(session => {
         const linked = session.getCellValue(ttaSessionsLinkField?.id);
         if (!linked || !linked.some(l => l.id === record.id)) return false;
@@ -243,41 +241,35 @@ const createRecordObjectWithTTA = (record, table, recordType, ttaSessions, ttaSe
         return true;
     });
 
-    const ttaData = ttaForRecord
+    const sessions = ttaForRecord
         .sort((a, b) => {
             const dateA = a.getCellValue(ttaDateField?.id);
             const dateB = b.getCellValue(ttaDateField?.id);
             return new Date(dateA) - new Date(dateB);
         })
         .map(session => ({
-            id: session.id,
             summary: session.getCellValueAsString(ttaSummaryForAIFieldId) || ''
         }));
 
     return {
-        tableId: table.id,
-        recordId: record.id,
-        type: recordType,
-        recordName: getRecordName(record, table),
-        ttaSessions: ttaData,
+        name: getRecordName(record, table),
+        sessions: sessions,
         children: []
     };
 };
 
 /**
  * Helper function to create an activity object with comments and status (for Board Plan)
+ * Only includes fields needed for AI summarization
  */
 const createActivityObjectWithDetails = (activity, activitiesTable, startDate, endDate, startDateField, endDateField, commentsFieldId, statusFieldId) => {
     const comments = activity.getCellValueAsString(commentsFieldId) || '';
     const status = activity.getCellValueAsString(statusFieldId) || '';
 
     return {
-        tableId: activitiesTable.id,
-        recordId: activity.id,
-        type: 'activity',
-        recordName: getRecordName(activity, activitiesTable),
-        activityComments: comments,
-        activityStatus: status,
+        name: getRecordName(activity, activitiesTable),
+        comments: comments,
+        status: status,
         children: []
     };
 };
@@ -486,7 +478,7 @@ export const buildHierarchicalRecordList = (
             const topRecord = workplanSources.find(ws => ws.id === topLevelId);
             if (!topRecord) return null;
 
-            root = createRecordObject(topRecord, workplanSourcesTable, 'workplanSource');
+            root = createRecordObject(topRecord, workplanSourcesTable);
 
             // Get linked goals
             const linkedGoals = goals.filter(goal => {
@@ -497,7 +489,7 @@ export const buildHierarchicalRecordList = (
             if (linkedGoals.length > 0) {
                 // Normal path: workplan source → goals → objectives → activities
                 for (const goal of linkedGoals) {
-                    const goalObj = createRecordObject(goal, goalsTable, 'goal');
+                    const goalObj = createRecordObject(goal, goalsTable);
 
                     // Get linked objectives
                     const linkedObjectives = objectives.filter(obj => {
@@ -506,7 +498,7 @@ export const buildHierarchicalRecordList = (
                     });
 
                     for (const objective of linkedObjectives) {
-                        const objObj = createRecordObject(objective, objectivesTable, 'objective');
+                        const objObj = createRecordObject(objective, objectivesTable);
 
                         // Always get linked activities
                         const linkedActivities = activities.filter(activity => {
@@ -520,7 +512,7 @@ export const buildHierarchicalRecordList = (
                             if (isBoardPlan) {
                                 actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
                             } else {
-                                actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                                actObj = createRecordObjectWithTTA(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                             }
                             objObj.children.push(actObj);
                         }
@@ -538,7 +530,7 @@ export const buildHierarchicalRecordList = (
                 });
 
                 for (const objective of linkedObjectives) {
-                    const objObj = createRecordObject(objective, objectivesTable, 'objective');
+                    const objObj = createRecordObject(objective, objectivesTable);
 
                     // Always get linked activities
                     const linkedActivities = activities.filter(activity => {
@@ -552,7 +544,7 @@ export const buildHierarchicalRecordList = (
                         if (isBoardPlan) {
                             actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
                         } else {
-                            actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                            actObj = createRecordObjectWithTTA(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                         }
                         objObj.children.push(actObj);
                     }
@@ -568,7 +560,7 @@ export const buildHierarchicalRecordList = (
             const topRecord = goals.find(g => g.id === topLevelId);
             if (!topRecord) return null;
 
-            root = createRecordObject(topRecord, goalsTable, 'goal');
+            root = createRecordObject(topRecord, goalsTable);
 
             // Get linked objectives
             const linkedObjectives = objectives.filter(obj => {
@@ -577,7 +569,7 @@ export const buildHierarchicalRecordList = (
             });
 
             for (const objective of linkedObjectives) {
-                const objObj = createRecordObject(objective, objectivesTable, 'objective');
+                const objObj = createRecordObject(objective, objectivesTable);
 
                 // Always get linked activities
                 const linkedActivities = activities.filter(activity => {
@@ -591,7 +583,7 @@ export const buildHierarchicalRecordList = (
                     if (isBoardPlan) {
                         actObj = createActivityObjectWithDetails(activity, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
                     } else {
-                        actObj = createRecordObjectWithTTA(activity, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                        actObj = createRecordObjectWithTTA(activity, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                     }
                     objObj.children.push(actObj);
                 }
@@ -606,7 +598,7 @@ export const buildHierarchicalRecordList = (
             const topRecord = objectives.find(o => o.id === topLevelId);
             if (!topRecord) return null;
 
-            root = createRecordObject(topRecord, objectivesTable, 'objective');
+            root = createRecordObject(topRecord, objectivesTable);
 
             // Always get linked activities
             const linkedActivities = activities.filter(activity => {
@@ -636,7 +628,7 @@ export const buildHierarchicalRecordList = (
                 if (isBoardPlan) {
                     return createActivityObjectWithDetails(topRecord, activitiesTable, startDate, endDate, activitiesStartDateField, activitiesEndDateField, activitiesCommentsFieldId, activitiesStatusFieldId);
                 } else {
-                    return createRecordObjectWithTTA(topRecord, activitiesTable, 'activity', ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
+                    return createRecordObjectWithTTA(topRecord, activitiesTable, ttaSessions, ttaSessionsLinkField, startDate, endDate, ttaDateField, ttaSummaryForAIFieldId);
                 }
             }
 

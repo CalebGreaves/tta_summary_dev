@@ -15,6 +15,7 @@ import { buildHierarchicalRecordList, toSuperCompactFormat, findWorkplanSource }
 import { parseMarkdownToSections } from './markdownParser';
 import { ReportRenderer } from './ReportRenderer';
 import { exportToWord, exportToHtml } from './wordExport';
+import LZString from 'lz-string';
 
 // Convert camelCase or backend names to readable labels
 const getReadableLabel = (value) => {
@@ -79,6 +80,10 @@ function ReportSelectorApp() {
     const [debugJsonOutput, setDebugJsonOutput] = useState(''); // for debugging JSON output
 
     const [jsonCharacterCount, setJsonCharacterCount] = useState(0);
+
+    // Test mode - show compression stats without creating record
+    const [testMode, setTestMode] = useState(false);
+    const [compressionStats, setCompressionStats] = useState(null);
 
     // Ref for dropdown to handle click-outside
     const dropdownRef = useRef(null);
@@ -364,6 +369,12 @@ function ReportSelectorApp() {
         JSON_2: 'fld82DDMxKyvcHfFC',
         JSON_3: 'fldslV70JJFdWp0vZ',
         JSON_4: 'fldpNrAVFWSSzkSIW',
+        JSON_5: 'fld4uwb25tiZjaMCZ',
+        JSON_6: 'fldbioPfnHpDc4DPx',
+        JSON_7: 'fldKiOt3kCnxoaXbm',
+        JSON_8: 'fldQqp2JFuRtwPGAo',
+        JSON_9: 'fld9hdcMbEvnknYyv',
+        JSON_10: 'fld4kBVPt9czzqeCb',
         START_DATE: 'fldf7QFdRUZvFxrj3',
         END_DATE: 'fldL9Ddrp8RrAdFax',
         STATUS: 'fldXhj8L8HcYZ5V7p',
@@ -410,13 +421,21 @@ function ReportSelectorApp() {
                 'fld6Cro64lmv8jrd3'  // Activity Status field (for Board Plan)
             );
 
-            // Create JSON string (pretty-printed for readability)
-            const jsonOutput = JSON.stringify(hierarchicalRecords, null, 2);
+            // Data is already condensed at build time - no need for runtime condensing
+            const condensedRecords = hierarchicalRecords;
+
+            // Create minified JSON string (no whitespace for maximum compression)
+            const jsonOutput = JSON.stringify(condensedRecords);
             const characterCount = jsonOutput.length;
 
-            console.log('Hierarchical Records JSON length:', characterCount);
+            // For debugging, also create a pretty version
+            const prettyJson = JSON.stringify(hierarchicalRecords, null, 2);
+
+            console.log('Original JSON length:', prettyJson.length);
+            console.log('Condensed JSON length:', characterCount);
+            console.log('Reduction:', Math.round((1 - characterCount/prettyJson.length) * 100) + '%');
             console.log('OUTPUT:', jsonOutput);
-            setDebugJsonOutput(jsonOutput);
+            setDebugJsonOutput(prettyJson);
             setJsonCharacterCount(characterCount);
 
             // Get the Report Requests table
@@ -428,16 +447,44 @@ function ReportSelectorApp() {
                 return;
             }
 
-            console.log('Splitting JSON across multiple Long Text fields...');
+            console.log('Compressing JSON with LZString...');
 
-            // Split JSON across multiple fields (100,000 chars each)
+            // Compress JSON using LZString
+            const compressedJson = LZString.compressToBase64(jsonOutput);
+            const compressedLength = compressedJson.length;
+            const compressionRatio = ((1 - (compressedLength / characterCount)) * 100).toFixed(1);
+
+            console.log(`Original JSON: ${characterCount} characters`);
+            console.log(`Compressed: ${compressedLength} characters`);
+            console.log(`Compression ratio: ${compressionRatio}% reduction`);
+
+            // Split compressed data across multiple fields (100,000 chars each)
             const FIELD_LIMIT = 100000;
-            const MAX_FIELDS = 4;
-            const MAX_TOTAL = FIELD_LIMIT * MAX_FIELDS; // 400,000 characters
+            const MAX_FIELDS = 10; // Increased from 4 to 10 for larger capacity
+            const MAX_TOTAL = FIELD_LIMIT * MAX_FIELDS; // 1,000,000 characters (can hold ~3-5MB of uncompressed JSON)
 
-            if (characterCount > MAX_TOTAL) {
-                console.error(`JSON too large: ${characterCount} characters (limit: ${MAX_TOTAL})`);
-                alert(`The report data is too large (${Math.round(characterCount/1000)}KB, limit is ${MAX_TOTAL/1000}KB).\n\n` +
+            // Calculate chunks needed
+            const chunksNeeded = Math.ceil(compressedLength / FIELD_LIMIT);
+
+            // If in test mode, just show stats and stop
+            if (testMode) {
+                setCompressionStats({
+                    originalSize: characterCount,
+                    compressedSize: compressedLength,
+                    compressionRatio: compressionRatio,
+                    chunksNeeded: chunksNeeded,
+                    fieldsAvailable: MAX_FIELDS,
+                    withinLimit: compressedLength <= MAX_TOTAL
+                });
+                setIsGenerating(false);
+                return;
+            }
+
+            if (compressedLength > MAX_TOTAL) {
+                console.error(`Compressed JSON too large: ${compressedLength} characters (limit: ${MAX_TOTAL})`);
+                alert(`The report data is too large even after compression (${Math.round(compressedLength/1000)}KB compressed, limit is ${MAX_TOTAL/1000}KB).\n\n` +
+                      `Original size: ${Math.round(characterCount/1000)}KB\n` +
+                      `Compressed size: ${Math.round(compressedLength/1000)}KB (${compressionRatio}% reduction)\n\n` +
                       `Please:\n` +
                       `1. Select a smaller date range\n` +
                       `2. Select a lower-level item\n` +
@@ -447,13 +494,13 @@ function ReportSelectorApp() {
             }
 
             try {
-                // Split JSON into chunks
+                // Split compressed JSON into chunks
                 const chunks = [];
-                for (let i = 0; i < jsonOutput.length; i += FIELD_LIMIT) {
-                    chunks.push(jsonOutput.substring(i, i + FIELD_LIMIT));
+                for (let i = 0; i < compressedJson.length; i += FIELD_LIMIT) {
+                    chunks.push(compressedJson.substring(i, i + FIELD_LIMIT));
                 }
 
-                console.log(`Created ${chunks.length} chunk(s)`);
+                console.log(`Created ${chunks.length} chunk(s) from compressed data`);
                 chunks.forEach((chunk, i) => {
                     console.log(`  Chunk ${i + 1}: ${chunk.length} characters`);
                 });
@@ -477,11 +524,17 @@ function ReportSelectorApp() {
                 // Create fields object with JSON chunks
                 const fields = {};
 
-                // Add JSON chunks to appropriate fields
+                // Add compressed JSON chunks to appropriate fields (up to 10 fields)
                 if (chunks.length > 0) fields[REPORT_FIELDS.JSON_1] = chunks[0];
                 if (chunks.length > 1) fields[REPORT_FIELDS.JSON_2] = chunks[1];
                 if (chunks.length > 2) fields[REPORT_FIELDS.JSON_3] = chunks[2];
                 if (chunks.length > 3) fields[REPORT_FIELDS.JSON_4] = chunks[3];
+                if (chunks.length > 4) fields[REPORT_FIELDS.JSON_5] = chunks[4];
+                if (chunks.length > 5) fields[REPORT_FIELDS.JSON_6] = chunks[5];
+                if (chunks.length > 6) fields[REPORT_FIELDS.JSON_7] = chunks[6];
+                if (chunks.length > 7) fields[REPORT_FIELDS.JSON_8] = chunks[7];
+                if (chunks.length > 8) fields[REPORT_FIELDS.JSON_9] = chunks[8];
+                if (chunks.length > 9) fields[REPORT_FIELDS.JSON_10] = chunks[9];
 
                 // Add dates if provided
                 if (startDate) {
@@ -787,6 +840,24 @@ function ReportSelectorApp() {
                             Date range: {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
                         </Text>
                     )}
+
+                    {/* Test Mode Toggle */}
+                    <Box display="flex" alignItems="center" gap={2} marginTop={2}>
+                        <input
+                            type="checkbox"
+                            id="testMode"
+                            checked={testMode}
+                            onChange={(e) => setTestMode(e.target.checked)}
+                            style={{ cursor: 'pointer' }}
+                        />
+                        <label
+                            htmlFor="testMode"
+                            style={{ cursor: 'pointer', marginBottom: 0, marginLeft: 8 }}
+                        >
+                            Test mode (show compression stats only)
+                        </label>
+                    </Box>
+
                     <Button
                         variant="primary"
                         size="large"
@@ -794,7 +865,49 @@ function ReportSelectorApp() {
                         disabled={!topLevel || !topLevelId || !bottomLevel}
                         onClick={handleGenerateReport}
                     >
-                        Generate Report
+                        {testMode ? 'Test Compression' : 'Generate Report'}
+                    </Button>
+                </Box>
+            )}
+
+            {/* Compression Stats Display (Test Mode) */}
+            {compressionStats && !isGenerating && (
+                <Box
+                    backgroundColor="white"
+                    padding={3}
+                    borderRadius="large"
+                    border="thick"
+                    marginBottom={3}
+                >
+                    <Heading size="large" marginBottom={3}>Compression Test Results</Heading>
+
+                    <Box backgroundColor="lightGray1" padding={3} borderRadius="default" marginBottom={2}>
+                        <Text size="large" marginBottom={2}>
+                            <strong>Original Size:</strong> {compressionStats.originalSize.toLocaleString()} characters ({Math.round(compressionStats.originalSize / 1000)}KB)
+                        </Text>
+                        <Text size="large" marginBottom={2}>
+                            <strong>Compressed Size:</strong> {compressionStats.compressedSize.toLocaleString()} characters ({Math.round(compressionStats.compressedSize / 1000)}KB)
+                        </Text>
+                        <Text size="large" marginBottom={2}>
+                            <strong>Compression Ratio:</strong> {compressionStats.compressionRatio}% reduction
+                        </Text>
+                        <Text size="large" marginBottom={2}>
+                            <strong>Fields Needed:</strong> {compressionStats.chunksNeeded} of {compressionStats.fieldsAvailable} available
+                        </Text>
+                        <Text size="large" textColor={compressionStats.withinLimit ? 'green' : 'red'}>
+                            <strong>Status:</strong> {compressionStats.withinLimit ? '✓ Within limit' : '✗ Too large'}
+                        </Text>
+                    </Box>
+
+                    <Button
+                        variant="secondary"
+                        size="default"
+                        onClick={() => {
+                            setCompressionStats(null);
+                            setDebugJsonOutput('');
+                        }}
+                    >
+                        Clear Results
                     </Button>
                 </Box>
             )}
@@ -812,9 +925,9 @@ function ReportSelectorApp() {
                     justifyContent="center"
                     minHeight="200px"
                 >
-                    <Heading size="small" marginBottom={2}>Generating Report...</Heading>
+                    <Heading size="small" marginBottom={2}>{testMode ? 'Testing Compression...' : 'Generating Report...'}</Heading>
                     <Text marginBottom={2} textColor="light">
-                        This may take a moment while the AI summarizes your data.
+                        {testMode ? 'Analyzing data size and compression...' : 'This may take a moment while the AI summarizes your data.'}
                     </Text>
                     <Box
                         style={{
